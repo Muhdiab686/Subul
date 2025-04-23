@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('shipment_id')->constrained()->cascadeOnDelete();
             $table->foreignId('driver_id')->nullable()->constrained('users');
+            $table->foreignId('delivery_staff_id')->nullable()->constrained('delivery_staff')->nullOnDelete();
             $table->foreignId('delivery_address_id')->constrained('addresses');
             $table->string('status')->default('scheduled');
             $table->decimal('cod_amount', 10, 2)->nullable();

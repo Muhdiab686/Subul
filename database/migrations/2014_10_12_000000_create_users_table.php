@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            // استبدال role_id بحقل role مباشر
-            $table->string('role')->default('customer'); // admin, manager, warehouseman, customer, company_client, driver
+            // تحديد نوع الحقل كـ enum
+            $table->enum('role', ['admin', 'manager', 'warehouseman', 'customer', 'company_client'])->default('customer');
             $table->foreignId('parent_company_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('first_name');
             $table->string('last_name');

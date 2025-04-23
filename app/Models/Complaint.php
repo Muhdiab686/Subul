@@ -43,4 +43,11 @@ class Complaint extends Model
     {
         return $this->belongsTo(User::class, 'handled_by_user_id');
     }
+
+    public function responses()
+    {
+        return $this->belongsToMany(ComplaintResponse::class, 'complaint_complaint_response')
+            ->withPivot('is_solved')
+            ->withTimestamps();
+    }
 }

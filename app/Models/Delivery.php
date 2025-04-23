@@ -12,6 +12,7 @@ class Delivery extends Model
     protected $fillable = [
         'shipment_id',
         'driver_id',
+        'delivery_staff_id',
         'delivery_address_id',
         'status',
         'cod_amount',
@@ -47,5 +48,13 @@ class Delivery extends Model
     public function address()
     {
         return $this->belongsTo(Address::class, 'delivery_address_id');
+    }
+
+    /**
+     * العلاقة مع موظف التوصيل
+     */
+    public function deliveryStaff()
+    {
+        return $this->belongsTo(DeliveryStaff::class, 'delivery_staff_id');
     }
 }

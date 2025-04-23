@@ -13,13 +13,7 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    // تعريف الأدوار المتاحة
-    const ROLE_ADMIN = 'admin';
-    const ROLE_MANAGER = 'manager';
-    const ROLE_WAREHOUSEMAN = 'warehouseman';
-    const ROLE_CUSTOMER = 'customer';
-    const ROLE_COMPANY_CLIENT = 'company_client';
-    const ROLE_DRIVER = 'driver';
+
 
     protected $fillable = [
         'role',
@@ -84,34 +78,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Wallet::class);
     }
 
-    // دوال التحقق من الأدوار
-    public function isAdmin(): bool
+    // علاقة المستخدم مع الشكاوى (كعميل)
+    public function complaints()
     {
-        return $this->role === self::ROLE_ADMIN;
+        return $this->hasMany(Complaint::class, 'customer_id');
     }
 
-    public function isManager(): bool
+    // علاقة المستخدم مع الشكاوى (كمعالج للشكوى)
+    public function handledComplaints()
     {
-        return $this->role === self::ROLE_MANAGER;
+        return $this->hasMany(Complaint::class, 'handled_by_user_id');
     }
 
-    public function isWarehouseman(): bool
+    // علاقة المستخدم مع ردود الشكاوى
+    public function complaintResponses()
     {
-        return $this->role === self::ROLE_WAREHOUSEMAN;
-    }
-
-    public function isCustomer(): bool
-    {
-        return $this->role === self::ROLE_CUSTOMER;
-    }
-
-    public function isCompanyClient(): bool
-    {
-        return $this->role === self::ROLE_COMPANY_CLIENT;
-    }
-
-    public function isDriver(): bool
-    {
-        return $this->role === self::ROLE_DRIVER;
+        return $this->hasMany(ComplaintResponse::class);
     }
 }

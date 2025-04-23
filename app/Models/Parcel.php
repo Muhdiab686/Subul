@@ -66,4 +66,12 @@ class Parcel extends Model
     {
         return $this->hasMany(ParcelItem::class);
     }
+
+    /**
+     * العلاقة مع إدارة الطرود
+     */
+    public function parcelManages()
+    {
+        return $this->hasMany(ParcelManage::class);
+    }
 }
