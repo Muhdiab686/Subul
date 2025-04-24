@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::create('delivery_staff', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // اسم الموظف
-            $table->string('address'); // السكن
-            $table->string('phone'); // رقم الهاتف
-            $table->string('job_title'); // المهنة
+            $table->string('name');
+            $table->string('address');
+            $table->string('phone');
+            $table->string('job_title');
             $table->timestamps();
             $table->softDeletes();
         });

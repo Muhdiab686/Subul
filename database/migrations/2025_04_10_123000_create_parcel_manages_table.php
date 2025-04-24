@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('parcel_manages', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->boolean('is_allowed')->default(true); // الحقل البولياني yes/no
+            $table->boolean('is_allowed')->default(true);
             $table->foreignId('parcel_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
