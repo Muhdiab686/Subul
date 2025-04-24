@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
             $table->string('tracking_number')->unique();
-            $table->enum('type', ['ship_pay', 'ship_only', 'pay_only']); // نوع الشحنة
+            $table->enum('type', ['ship_pay', 'ship_only', 'pay_only']);
             $table->foreignId('customer_id')->constrained('users');
             $table->foreignId('supplier_id')->nullable()->constrained();
             $table->foreignId('origin_country_id')->constrained('countries');

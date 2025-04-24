@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('parcel_manages', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('content');
             $table->boolean('is_allowed')->default(true);
             $table->foreignId('parcel_id')->constrained()->cascadeOnDelete();
             $table->timestamps();

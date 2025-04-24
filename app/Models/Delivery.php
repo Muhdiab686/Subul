@@ -45,10 +45,6 @@ class Delivery extends Model
         return $this->belongsTo(User::class, 'driver_id');
     }
 
-    public function address()
-    {
-        return $this->belongsTo(Address::class, 'delivery_address_id');
-    }
 
     /**
      * العلاقة مع موظف التوصيل

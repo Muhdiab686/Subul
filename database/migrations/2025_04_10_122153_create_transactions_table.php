@@ -10,18 +10,14 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('wallet_id')->constrained()->cascadeOnDelete();
             $table->string('type');
             $table->decimal('amount', 15, 2);
             $table->string('currency', 3);
-            $table->unsignedBigInteger('related_entity_id')->nullable();
-            $table->string('related_entity_type')->nullable();
             $table->text('description')->nullable();
             $table->string('reference')->nullable();
             $table->string('status')->default('completed');
+            $table->foreignId('wallet_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
-
-            $table->index(['related_entity_id', 'related_entity_type']);
         });
     }
 

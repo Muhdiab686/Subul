@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
@@ -29,7 +30,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_photo_path',
         'identity_photo_path',
         'customer_code',
-        'shipping_company_id'
     ];
 
     protected $hidden = [
@@ -42,57 +42,58 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_verified_at' => 'datetime',
     ];
 
-    // علاقة المستخدم مع الشركة الأم
     public function parentCompany()
     {
         return $this->belongsTo(User::class, 'parent_company_id');
     }
 
-    // علاقة المستخدم مع شركة الشحن
     public function shippingCompany()
     {
         return $this->belongsTo(User::class, 'shipping_company_id');
     }
 
-    // علاقة المستخدم مع الشحنات
     public function shipments()
     {
         return $this->hasMany(Shipment::class, 'customer_id');
     }
 
-    // علاقة المستخدم مع الطرود
     public function parcels()
     {
         return $this->hasMany(Parcel::class, 'customer_id');
     }
 
-    // علاقة المستخدم مع عمليات التسليم (إذا كان سائقًا)
     public function deliveries()
     {
         return $this->hasMany(Delivery::class, 'driver_id');
     }
 
-    // علاقة المستخدم مع المحفظة الإلكترونية
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
     }
 
-    // علاقة المستخدم مع الشكاوى (كعميل)
     public function complaints()
     {
         return $this->hasMany(Complaint::class, 'customer_id');
     }
 
-    // علاقة المستخدم مع الشكاوى (كمعالج للشكوى)
     public function handledComplaints()
     {
         return $this->hasMany(Complaint::class, 'handled_by_user_id');
     }
 
-    // علاقة المستخدم مع ردود الشكاوى
     public function complaintResponses()
     {
         return $this->hasMany(ComplaintResponse::class);
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }
