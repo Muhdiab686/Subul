@@ -15,7 +15,6 @@ class ManagerController extends Controller
     public function __construct(ManagerService $managerService)
     {
         $this->managerService = $managerService;
-        $this->middleware('auth:api', ['except' => ['login']]);
     }
 
     public function addCustomer(Request $request)

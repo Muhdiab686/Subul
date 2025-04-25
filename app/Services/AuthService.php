@@ -38,7 +38,6 @@ class AuthService
         $verifiedCode = $this->generateVerifiedCode();
 
 
-            // تخزين صورة الملف الشخصي
     $profilePhotoPath = null;
     if (isset($data['profile_photo_path'])) {
         $filename = Str::uuid() . '.' . $data['profile_photo_path']->getClientOriginalExtension();
@@ -46,7 +45,6 @@ class AuthService
         $profilePhotoPath = '/uploads/profile_photos/' . $filename;
     }
 
-    // تخزين صورة الهوية
     $identityPhotoPath = null;
     if (isset($data['identity_photo_path'])) {
         $filename = Str::uuid() . '.' . $data['identity_photo_path']->getClientOriginalExtension();

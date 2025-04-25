@@ -29,7 +29,7 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/update/delivery-staff/{id}', [AdminController::class, 'updateDelivery']);
     Route::delete('/dalete/delivery-staff/{id}', [AdminController::class, 'destroyDelivery']);
 
-    Route::post('addCustomar', [ManagerController::class, 'addCustomer']);
-    Route::get('getAllCustomers', [ManagerController::class, 'getAllCustomers']);
-    Route::delete('deleteCustomer/{id}', [ManagerController::class, 'deleteCustomer']);
+    Route::post('/add/Customar', [ManagerController::class, 'addCustomer']);
+    Route::get('/getAll/Customers', [ManagerController::class, 'getAllCustomers']);
+    Route::delete('/delete/Customer/{id}', [ManagerController::class, 'deleteCustomer']);
 });
