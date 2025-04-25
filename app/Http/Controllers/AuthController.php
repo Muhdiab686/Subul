@@ -23,6 +23,7 @@ class AuthController extends Controller
             'password'   => 'required|string|min:6',
             'phone'      => 'nullable|string|unique:users,phone',
             'gender'     => 'nullable|string',
+            'address'    => 'nullable|string',
             'timezone'   => 'nullable|string',
             'profile_photo_path'=> 'nullable|image',
             'identity_photo_path'=>'nullable|image',

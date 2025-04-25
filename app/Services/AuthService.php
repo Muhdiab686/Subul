@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Str;
+
 
 class AuthService
 {
@@ -28,12 +30,29 @@ class AuthService
     {
         return rand(100000, 999999);
     }
-    
+
 
     public function register(array $data)
     {
         $customerCode = $this->generateCustomerCode();
         $verifiedCode = $this->generateVerifiedCode();
+
+
+            // تخزين صورة الملف الشخصي
+    $profilePhotoPath = null;
+    if (isset($data['profile_photo_path'])) {
+        $filename = Str::uuid() . '.' . $data['profile_photo_path']->getClientOriginalExtension();
+        $data['profile_photo_path']->move(public_path('/uploads/profile_photos'), $filename);
+        $profilePhotoPath = '/uploads/profile_photos/' . $filename;
+    }
+
+    // تخزين صورة الهوية
+    $identityPhotoPath = null;
+    if (isset($data['identity_photo_path'])) {
+        $filename = Str::uuid() . '.' . $data['identity_photo_path']->getClientOriginalExtension();
+        $data['identity_photo_path']->move(public_path('/uploads/identity_photos'), $filename);
+        $identityPhotoPath = '/uploads/identity_photos/' . $filename;
+    }
 
         $userData = [
             'first_name' => $data['first_name'],
@@ -42,9 +61,10 @@ class AuthService
             'password' => $data['password'],
             'phone' => $data['phone'] ?? null,
             'gender' => $data['gender'] ?? null,
+            'address'=>$data['address'] ?? null,
             'timezone' => $data['timezone'] ?? null,
-            'profile_photo_path' => $data['profile_photo_path'] ?? null,
-            'identity_photo_path' => $data['identity_photo_path'] ?? null,
+            'profile_photo_path' => $profilePhotoPath,
+            'identity_photo_path' => $identityPhotoPath,
             'status' => 0,
             'customer_code' => $customerCode,
             'verified_code' => $verifiedCode,
@@ -60,7 +80,7 @@ class AuthService
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
-       
+
         return $this->successResponse($token,'Successfuly',200);
     }
 }
