@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('profile_photo_path')->nullable();
             $table->string('identity_photo_path')->nullable();
             $table->string('customer_code')->unique()->nullable();
+            $table->string('FCM_TOKEN')->nullable();
+            $table->string('verified_code')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

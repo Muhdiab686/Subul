@@ -17,9 +17,24 @@ class AuthService
     {
         $this->userRepo = $userRepo;
     }
+    private function generateCustomerCode()
+    {
+        $letters = strtoupper(substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 2));
+        $numbers = rand(100, 999);
+        $suffix = rand(10, 99);
+        return "$letters-$numbers-$suffix";
+    }
+    private function generateVerifiedCode()
+    {
+        return rand(100000, 999999);
+    }
+    
 
     public function register(array $data)
     {
+        $customerCode = $this->generateCustomerCode();
+        $verifiedCode = $this->generateVerifiedCode();
+
         $userData = [
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
@@ -31,6 +46,8 @@ class AuthService
             'profile_photo_path' => $data['profile_photo_path'] ?? null,
             'identity_photo_path' => $data['identity_photo_path'] ?? null,
             'status' => 0,
+            'customer_code' => $customerCode,
+            'verified_code' => $verifiedCode,
         ];
         $data = $this->userRepo->createUser($userData);
         return $this->successResponse($data,'Successfuly',200);
