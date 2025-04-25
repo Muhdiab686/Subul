@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('phone')->unique()->nullable();
             $table->timestamp('phone_verified_at')->nullable();
             $table->string('gender')->nullable();
+            $table->string('address')->nullable();
             $table->boolean('status')->default(0);
             $table->string('timezone')->nullable();
             $table->string('profile_photo_path')->nullable();
