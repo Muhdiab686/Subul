@@ -5,10 +5,15 @@ use App\Http\Controllers\AuthController;
 use App\Services\AdminService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ManagerController;
+
 
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+
+
+
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/get/content/parcels', [AdminController::class, 'getcontentpracel']);
@@ -23,4 +28,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/create/delivery-staff', [AdminController::class, 'storeDelivery']);
     Route::put('/update/delivery-staff/{id}', [AdminController::class, 'updateDelivery']);
     Route::delete('/dalete/delivery-staff/{id}', [AdminController::class, 'destroyDelivery']);
+
+    Route::post('addCustomar', [ManagerController::class, 'addCustomer']);
+    Route::get('getAllCustomers', [ManagerController::class, 'getAllCustomers']);
+    Route::delete('deleteCustomer/{id}', [ManagerController::class, 'deleteCustomer']);
 });
