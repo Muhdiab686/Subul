@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('content');
             $table->boolean('is_allowed')->default(true);
-            $table->foreignId('parcel_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

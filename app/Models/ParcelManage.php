@@ -11,16 +11,7 @@ class ParcelManage extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name',
+        'content',
         'is_allowed',
-        'parcel_id'
     ];
-
-    /**
-     * العلاقة مع الطرد
-     */
-    public function parcel()
-    {
-        return $this->belongsTo(Parcel::class);
-    }
 }
