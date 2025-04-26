@@ -6,6 +6,7 @@ use App\Services\AdminService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ManagerController;
+use App\Http\Controllers\WarehousemanController;
 
 
 
@@ -29,7 +30,5 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/update/delivery-staff/{id}', [AdminController::class, 'updateDelivery']);
     Route::delete('/dalete/delivery-staff/{id}', [AdminController::class, 'destroyDelivery']);
 
-    Route::post('/add/Customar', [ManagerController::class, 'addCustomer']);
-    Route::get('/getAll/Customers', [ManagerController::class, 'getAllCustomers']);
-    Route::delete('/delete/Customer/{id}', [ManagerController::class, 'deleteCustomer']);
+
 });

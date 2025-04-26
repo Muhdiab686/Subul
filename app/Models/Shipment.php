@@ -15,6 +15,8 @@ class Shipment extends Model
         'type',
         'customer_id',
         'supplier_id',
+        'supplier_name',
+        'supplier_number',
         'origin_country_id',
         'destination_country_id',
         'status',

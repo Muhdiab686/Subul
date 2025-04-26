@@ -14,9 +14,11 @@ return new class extends Migration
             $table->enum('type', ['ship_pay', 'ship_only', 'pay_only']);
             $table->foreignId('customer_id')->constrained('users');
             $table->foreignId('supplier_id')->nullable()->constrained();
-            $table->foreignId('origin_country_id')->constrained('countries');
-            $table->foreignId('destination_country_id')->constrained('countries');
-            $table->string('status');
+            $table->string('supplier_name')->nullable();
+            $table->string('supplier_number')->nullable();
+            $table->foreignId('origin_country_id')->nullable()->constrained('countries');
+            $table->foreignId('destination_country_id')->nullable()->constrained('countries');
+            $table->enum('status',['in_process' , 'in_the_way' , 'delivered' , 'rejected'] );
             $table->integer('declared_parcels_count')->nullable();
             $table->integer('actual_parcels_count')->nullable();
             $table->timestamp('sent_at')->nullable();

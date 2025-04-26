@@ -2,12 +2,9 @@
 namespace App\Services;
 
 use App\Repositories\ManagerRepository;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Str;
-
+use App\Models\Shipment;
 
 class ManagerService
 {
@@ -81,7 +78,7 @@ class ManagerService
         public function getAllCustomers()
     {
         $data = $this->managerRepository->getAllCustomers();
-        return $this->successResponse($data,'user Successfuly created',200);
+        return $this->successResponse($data,' Successfuly ',200);
     }
 
 
@@ -104,4 +101,136 @@ class ManagerService
 
 
 
+    public function get_approved_Shipments()
+    {
+
+        $shipments = $this->managerRepository->get_approved_Shipments();
+
+
+        $shipments->load('customer:id,first_name,last_name');
+
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_id' => $shipment->customer_id,
+                'customer_name' => $shipment->customer->first_name . ' ' . $shipment->customer->last_name,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+    public function get_unapproved_Shipments()
+    {
+
+        $shipments = $this->managerRepository->get_unapproved_Shipments();
+
+
+        $shipments->load('customer:id,first_name,last_name');
+
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_id' => $shipment->customer_id,
+                'customer_name' => $shipment->customer->first_name . ' ' . $shipment->customer->last_name,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+    public function getCustomerShipments($customerCode)
+    {
+
+        $shipments = $this->managerRepository->getCustomerShipments($customerCode);
+
+
+        $shipments->load('customer:id,first_name,last_name');
+
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_name' => $shipment->customer->first_name . ' ' . $shipment->customer->last_name,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+    public function rejectShipment(array $data)
+    {
+        $data = $this->managerRepository->rejectShipment(
+            $data['shipment_id'],
+            $data['cancellation_reason']
+        );
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+
+    public function getRejectedShipments()
+    {
+        $shipments = $this->managerRepository->getRejectedShipments();
+
+
+        $shipments->load('customer:id,first_name,last_name');
+
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'tracking_number' => $shipment->tracking_number,
+                'customer_name' => $shipment->customer->first_name . ' ' . $shipment->customer->last_name,
+                'type' => $shipment->type,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'status' => $shipment->status,
+                'cancellation_reason' => $shipment->cancellation_reason,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+    public function getShipmentById($shipmentId)
+    {
+        $shipment = $this->managerRepository->getShipmentById($shipmentId);
+
+        
+        $shipment->load('customer:id,first_name,last_name');
+
+
+        $data = [
+            'id' => $shipment->id,
+            'tracking_number' => $shipment->tracking_number,
+            'type' => $shipment->type,
+            'customer_name' => $shipment->customer->first_name . ' ' . $shipment->customer->last_name,
+            'supplier_name' => $shipment->supplier_name,
+            'supplier_number' => $shipment->supplier_number,
+            'status' => $shipment->status,
+            'declared_parcels_count' => $shipment->declared_parcels_count,
+            'actual_parcels_count' => $shipment->actual_parcels_count,
+            'notes' => $shipment->notes,
+            'created_at' => $shipment->created_at
+        ];
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
 }

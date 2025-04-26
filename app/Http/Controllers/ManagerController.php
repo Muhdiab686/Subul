@@ -49,6 +49,46 @@ class ManagerController extends Controller
     }
 
 
+    public function get_approved_Shipments()
+    {
+        return $this->managerService->get_approved_Shipments();
+    }
+
+    public function get_unapproved_Shipments()
+    {
+        return $this->managerService->get_unapproved_Shipments();
+    }
 
 
+    public function getCustomerShipments(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_code' => 'required|string|max:255'
+        ]);
+
+        return $this->managerService->getCustomerShipments($validated['customer_code']);
+    }
+
+    public function rejectShipment(Request $request)
+    {
+        $validated = $request->validate([
+            'shipment_id' => 'required|exists:shipments,id',
+            'cancellation_reason' => 'required|string|max:255'
+        ]);
+
+        return $this->managerService->rejectShipment($validated);
+    }
+
+    public function getRejectedShipments()
+{
+    return $this->managerService->getRejectedShipments();
+}
+
+    public function getShipmentById($shipment_id)
+    {
+        
+        $validated = ['shipment_id' => $shipment_id];
+
+        return $this->managerService->getShipmentById($shipment_id);
+    }
 }
