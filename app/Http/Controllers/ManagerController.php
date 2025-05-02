@@ -86,9 +86,29 @@ class ManagerController extends Controller
 
     public function getShipmentById($shipment_id)
     {
-        
+
         $validated = ['shipment_id' => $shipment_id];
 
         return $this->managerService->getShipmentById($shipment_id);
     }
+
+    public function createInvoice(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:users,id',
+            'shipment_id' => 'required|exists:shipments,id',
+            'amount' => 'required|numeric|min:0',
+            'includes_tax' => 'required|boolean',
+            'tax_amount' => 'required_if:includes_tax,true|numeric|min:0',
+            'payable_at' => 'required|date'
+        ]);
+
+        return $this->managerService->createInvoice($validated);
+    }
+
+    public function getInvoiceDetails($invoice_id)
+{
+    return $this->managerService->getInvoiceDetails($invoice_id);
+}
+
 }

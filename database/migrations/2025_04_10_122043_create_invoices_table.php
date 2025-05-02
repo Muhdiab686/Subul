@@ -20,7 +20,7 @@ return new class extends Migration
             $table->boolean('includes_tax')->default(false);
             $table->decimal('tax_amount', 12, 2)->nullable();
             $table->decimal('total_amount', 12, 2);
-            $table->string('status');
+            $table->enum('status',['paid','not_paid'])->default('not_paid');
             $table->string('file_path')->nullable();
             $table->timestamp('due_date')->nullable();
             $table->timestamp('payable_at')->nullable();

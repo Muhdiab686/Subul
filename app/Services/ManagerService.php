@@ -5,6 +5,8 @@ use App\Repositories\ManagerRepository;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Str;
 use App\Models\Shipment;
+use App\Models\QrCode;
+use SimpleSoftwareIO\QrCode\Facades\QrCode as QrCodeGenerator;
 
 class ManagerService
 {
@@ -213,7 +215,7 @@ class ManagerService
     {
         $shipment = $this->managerRepository->getShipmentById($shipmentId);
 
-        
+
         $shipment->load('customer:id,first_name,last_name');
 
 
@@ -233,4 +235,127 @@ class ManagerService
 
         return $this->successResponse($data,' Successfuly ',200);
     }
+
+    private function generateQRCode($shipmentId, $invoiceId)
+    {
+        $qrData = json_encode([
+            'shipment_id' => $shipmentId
+        ]);
+
+        $filename = Str::uuid() . '.svg';
+        $qrPath = '/uploads/qr_codes/' . $filename;
+
+        if (!file_exists(public_path('/uploads/qr_codes'))) {
+            mkdir(public_path('/uploads/qr_codes'), 0777, true);
+        }
+
+        QrCodeGenerator::size(300)
+            ->errorCorrection('H')
+            ->generate($qrData, public_path($qrPath));
+
+        $qrCodeData = [
+            'shipment_id' => $shipmentId,
+            'invoice_id' => $invoiceId,
+            'qr_code_path' => $qrPath,
+            'qr_code_data' => $qrData
+        ];
+
+        return $this->managerRepository->createQRCode($qrCodeData);
+    }
+
+
+
+    private function generateInvoiceNumber()
+    {
+
+        $lastInvoice = $this->managerRepository->getLastInvoice();
+
+        if (!$lastInvoice) {
+            $number = 1;
+        } else {
+            $lastNumber = (int) substr($lastInvoice->invoice_number, 4);
+            $number = $lastNumber + 1;
+        }
+
+
+        return 'INV-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function createInvoice(array $data)
+    {
+
+        $invoiceNumber = $this->generateInvoiceNumber();
+
+
+        $totalAmount = $data['amount'];
+        if ($data['includes_tax'] && isset($data['tax_amount'])) {
+            $totalAmount += $data['tax_amount'];
+        }
+
+
+        $invoiceData = [
+            'customer_id' => $data['customer_id'],
+            'shipment_id' => $data['shipment_id'],
+            'invoice_number' => $invoiceNumber,
+            'amount' => $data['amount'],
+            'includes_tax' => $data['includes_tax'],
+            'tax_amount' => $data['includes_tax'] ? $data['tax_amount'] : null,
+            'total_amount' => $totalAmount,
+            'payable_at' => $data['payable_at'],
+            'status' => 'not_paid'
+        ];
+
+
+        $invoice = $this->managerRepository->createInvoice($invoiceData);
+
+        $this->managerRepository->updateShipmentStatus($data['shipment_id'], 'in_the_way');
+
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+    public function getInvoiceDetails($invoice_id)
+    {
+        $invoice = $this->managerRepository->getInvoiceWithDetails($invoice_id);
+
+        if (!$invoice) {
+            return $this->errorResponse('Invoice not found', 404);
+        }
+
+        // Check if QR code exists and generate if not
+        if (!$invoice->qrcode) {
+            $qrCode = $this->generateQRCode($invoice->shipment_id, $invoice->id);
+            $qrCodePath = $qrCode->qr_code_path;
+        } else {
+            $qrCodePath = $invoice->qrcode->qr_code_path;
+        }
+
+        $data = [
+            'invoice_details' => [
+                'id' => $invoice->id,
+                'payable_at' => date('d/m/Y', strtotime($invoice->payable_at)),
+                'invoice_number' => $invoice->invoice_number,
+                'amount' => $invoice->amount,
+                'name' => $invoice->customer->first_name . ' ' . $invoice->customer->last_name,
+                'phone' => $invoice->customer->phone,
+                'customer_code' => $invoice->customer->customer_code,
+                'declared_parcels_count' => $invoice->shipment->declared_parcels_count,
+                'supplier_name' => $invoice->shipment->supplier_name,
+                'qr_code' => $qrCodePath,
+            ],
+
+
+            'tax_amount' => $invoice->tax_amount,
+            'total_amount' => $invoice->total_amount,
+            'includes_tax' => $invoice->includes_tax,
+            'status' => $invoice->status,
+            'created_at' => date('d/m/Y', strtotime($invoice->created_at)),
+        ];
+
+        return $this->successResponse($data, 'Successfully retrieved invoice details', 200);
+    }
+
+
 }
+
+
+

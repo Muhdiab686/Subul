@@ -25,7 +25,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/get/rejected/shipments/', [ManagerController::class, 'getRejectedShipments']);
     Route::post('/reject/shipments', [ManagerController::class, 'rejectShipment']);
 
+    Route::post('/create/invoice', [ManagerController::class, 'createInvoice']);
+    Route::get('/get/invoice/{invoice_id}', [ManagerController::class, 'getInvoiceDetails']);
 
+    
     Route::get('/get/customers', [WarehousemanController::class, 'getCustomers']);
     Route::post('/create/shipments', [WarehousemanController::class, 'createShipment']);
 

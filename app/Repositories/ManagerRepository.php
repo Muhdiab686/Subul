@@ -3,6 +3,8 @@ namespace App\Repositories;
 
 use App\Models\User;
 use App\Models\Shipment;
+use App\Models\QrCode;
+use App\Models\Invoice;
 use Illuminate\Support\Facades\Hash;
 
 class ManagerRepository
@@ -72,4 +74,32 @@ class ManagerRepository
     {
         return Shipment::findOrFail($shipmentId);
     }
+
+    public function createQRCode(array $data)
+    {
+        return QrCode::create($data);
+    }
+
+    public function createInvoice(array $data)
+    {
+        return Invoice::create($data);
+    }
+
+    public function updateShipmentStatus($shipmentId, $status)
+    {
+        return Shipment::where('id', $shipmentId)
+            ->update(['status' => $status]);
+    }
+
+    public function getLastInvoice()
+    {
+        return Invoice::orderBy('id', 'desc')->first();
+    }
+
+    public function getInvoiceWithDetails($invoice_id)
+{
+    return Invoice::with(['customer', 'qrcode'])
+        ->where('id', $invoice_id)
+        ->first();
+}
 }

@@ -48,4 +48,9 @@ class Invoice extends Model
     {
         return $this->morphMany(Transaction::class, 'related_entity');
     }
+
+    public function qrCode()
+    {
+        return $this->hasOne(QrCode::class);
+    }
 }
