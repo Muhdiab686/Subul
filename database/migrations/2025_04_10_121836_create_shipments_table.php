@@ -32,6 +32,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->foreignId('created_by_user_id')->nullable()->constrained('users');
             $table->boolean('is_approved')->default(false);
+            $table->boolean('delivered_to_WH_dis')->default(false);
             $table->timestamps();
             $table->softDeletes();
         });

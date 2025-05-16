@@ -32,7 +32,8 @@ class Shipment extends Model
         'cancellation_reason',
         'notes',
         'created_by_user_id',
-        'is_approved'
+        'is_approved',
+        'delivered_to_WH_dis'
     ];
 
     protected $dates = [

@@ -67,7 +67,7 @@ class ManagerService
             'status' => 1,
             'customer_code' => $customerCode,
             'verified_code' => $verifiedCode,
-            'role' => $data['is_company'] ? 'company_client' : 'customer',
+            'role' => $data['is_company'] ? 'company' : 'customer',
         ];
 
         $data = $this->managerRepository->createCustomer($userData);
@@ -92,7 +92,7 @@ class ManagerService
             return $this->errorResponse('customar not found', 404);
         }
 
-        if (!in_array($customer->role, ['customer', 'company_client'])) {
+        if (!in_array($customer->role, ['customer', 'company'])) {
             return $this->errorResponse('you are not Authorized', 403);
         }
 

@@ -11,23 +11,23 @@ return new class extends Migration
         Schema::create('parcels', function (Blueprint $table) {
             $table->id();
             $table->foreignId('shipment_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('customer_id')->constrained('users');
-            $table->string('parcel_number')->nullable();
             $table->decimal('actual_weight', 8, 3)->nullable();
             $table->decimal('special_actual_weight', 8, 3)->nullable();
             $table->decimal('normal_actual_weight', 8, 3)->nullable();
-            $table->decimal('special_volumetric_weight', 8, 3)->nullable();
-            $table->decimal('normal_volumetric_weight', 8, 3)->nullable();
-            $table->decimal('calculated_volumetric_weight', 8, 3)->nullable();
-            $table->decimal('final_charged_weight', 8, 3)->nullable();
+            $table->decimal('special_dimensional_weight', 8, 3)->nullable();
+            $table->decimal('normal_dimensional_weight', 8, 3)->nullable();
             $table->decimal('length', 8, 2)->nullable();
             $table->decimal('width', 8, 2)->nullable();
             $table->decimal('height', 8, 2)->nullable();
+            $table->decimal('calculated_dimensional_weight', 8, 3)->nullable();
+            $table->decimal('calculated_final_weight', 8, 3)->nullable();
+            $table->string('scale_photo_upload')->nullable();
             $table->integer('declared_items_count')->nullable();
             $table->string('brand_type')->nullable();
             $table->boolean('is_fragile')->default(false);
             $table->boolean('needs_repacking')->default(false);
-            $table->string('status');
+            $table->decimal('cost_of_repacking', 8, 3)->nullable();
+            $table->enum('status',['stored' , 'scheduled' , 'pickup' , 'deliverable'] );
             $table->text('content_description')->nullable();
             $table->text('notes')->nullable();
             $table->text('print_notes')->nullable();
@@ -38,7 +38,6 @@ return new class extends Migration
             $table->text('opened_notes')->nullable();
             $table->boolean('is_damaged')->default(false);
             $table->text('damaged_notes')->nullable();
-            $table->string('scale_photo_path')->nullable();
             $table->decimal('new_actual_weight', 8, 3)->nullable();
             $table->timestamps();
             $table->softDeletes();

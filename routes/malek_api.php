@@ -28,9 +28,25 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/create/invoice', [ManagerController::class, 'createInvoice']);
     Route::get('/get/invoice/{invoice_id}', [ManagerController::class, 'getInvoiceDetails']);
 
-    
+
+
+
+
     Route::get('/get/customers', [WarehousemanController::class, 'getCustomers']);
     Route::post('/create/shipments', [WarehousemanController::class, 'createShipment']);
+    Route::get('/get/shipments/in-process', [WarehousemanController::class, 'getInProcessShipments']);
+
+    Route::post('/shipments/{shipment_id}/origin-country/{origin_country_id}', [WarehousemanController::class, 'updateShipmentOriginCountry']);
+    Route::post('/shipments/{shipment_id}/destination-country/{destination_country_id}', [WarehousemanController::class, 'updateShipmentDestinationCountry']);
+    Route::post('/update/shipments/costs/{shipment_id}', [WarehousemanController::class, 'updateShipmentCosts']);
+
+
+
+    Route::post('/create/parcel/{shipment_id}', [WarehousemanController::class, 'createParcel']);
+    Route::get('/get/all/parcels', [WarehousemanController::class, 'getAllParcels']);
+    Route::get('/get/parcels/{shipment_id}', [WarehousemanController::class, 'getParcelsByShipmentId']);
+    Route::get('/get/one/parcels/{parcel_id}', [WarehousemanController::class, 'getParcelByParcelId']);
+
 
 
 

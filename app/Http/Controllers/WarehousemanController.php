@@ -38,4 +38,105 @@ class WarehousemanController extends Controller
 
         return $this->warehousemanService->createShipment($validated);
     }
+
+    public function updateShipmentOriginCountry($shipment_id, $origin_country_id)
+    {
+        $validated = [
+            'shipment_id' => $shipment_id,
+            'origin_country_id' => $origin_country_id
+        ];
+
+        validator($validated, [
+            'shipment_id' => 'required|exists:shipments,id',
+            'origin_country_id' => 'required|exists:countries,id'
+        ])->validate();
+
+        return $this->warehousemanService->updateShipmentOriginCountry($validated);
+    }
+
+    public function updateShipmentDestinationCountry($shipment_id, $destination_country_id)
+    {
+        $validated = [
+            'shipment_id' => $shipment_id,
+            'destination_country_id' => $destination_country_id
+        ];
+
+        validator($validated, [
+            'shipment_id' => 'required|exists:shipments,id',
+            'destination_country_id' => 'required|exists:countries,id'
+        ])->validate();
+
+        return $this->warehousemanService->updateShipmentDestinationCountry($validated);
+    }
+
+    public function getInProcessShipments()
+    {
+        return $this->warehousemanService->getInProcessShipments();
+    }
+
+
+    public function updateShipmentCosts(Request $request, $shipment_id)
+    {
+        $validated = $request->validate([
+            'sent_at' => 'nullable|date',
+            'delivered_at' => 'nullable|date',
+            'cost_delivery_origin' => 'nullable|numeric|min:0',
+            'cost_express_origin' => 'nullable|numeric|min:0',
+            'cost_customs_origin' => 'nullable|numeric|min:0',
+            'cost_air_freight' => 'nullable|numeric|min:0',
+            'cost_delivery_destination' => 'nullable|numeric|min:0',
+            'mark_as_delivered' => 'nullable|boolean'
+        ]);
+
+        return $this->warehousemanService->updateShipmentCosts($shipment_id, $validated);
+    }
+
+    public function createParcel(Request $request, $shipment_id)
+    {
+        $validated = $request->validate([
+            'actual_weight' => 'required|numeric|min:0',
+            'special_actual_weight' => 'required|numeric|min:0',
+            'normal_actual_weight' => 'required|numeric|min:0',
+            'special_dimensional_weight' => 'required|numeric|min:0',
+            'normal_dimensional_weight' => 'required|numeric|min:0',
+            'length' => 'required|numeric|min:0',
+            'width' => 'required|numeric|min:0',
+            'height' => 'required|numeric|min:0',
+            'scale_photo_upload' => 'nullable|image',
+            'brand_type' => 'required|string',
+            'is_fragile' => 'required|boolean',
+            'needs_repacking' => 'required|boolean',
+            'cost_of_repacking' => 'required_if:needs_repacking,true|numeric|min:0|nullable',
+            'notes' => 'nullable|string',
+            'print_notes' => 'nullable|string'
+        ]);
+
+        $validated['shipment_id'] = $shipment_id;
+
+        return $this->warehousemanService->createParcel($validated);
+    }
+
+    public function getAllParcels()
+    {
+        return $this->warehousemanService->getAllParcels();
+    }
+
+    public function getParcelsByShipmentId($shipment_id)
+    {
+
+        validator(['shipment_id' => $shipment_id], [
+            'shipment_id' => 'required|exists:shipments,id'
+        ])->validate();
+
+        return $this->warehousemanService->getParcelsByShipmentId($shipment_id);
+    }
+
+    public function getParcelByParcelId($parcel_id)
+    {
+        validator(['parcel_id' => $parcel_id], [
+            'parcel_id' => 'required|exists:parcels,id'
+        ])->validate();
+
+        return $this->warehousemanService->getParcelByParcelId($parcel_id);
+    }
 }

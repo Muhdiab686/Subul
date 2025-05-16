@@ -17,7 +17,7 @@ class ManagerRepository
 
     public function getAllCustomers()
     {
-        return User::whereIn('role', ['customer', 'company_client'])->get();
+        return User::whereIn('role', ['customer', 'company'])->get();
     }
 
 

@@ -12,22 +12,22 @@ class Parcel extends Model
 
     protected $fillable = [
         'shipment_id',
-        'customer_id',
-        'parcel_number',
         'actual_weight',
         'special_actual_weight',
         'normal_actual_weight',
-        'special_volumetric_weight',
-        'normal_volumetric_weight',
-        'calculated_volumetric_weight',
-        'final_charged_weight',
+        'special_dimensional_weight',
+        'normal_dimensional_weight',
         'length',
         'width',
         'height',
+        'calculated_dimensional_weight',
+        'calculated_final_weight',
+        'scale_photo_upload',
         'declared_items_count',
         'brand_type',
         'is_fragile',
         'needs_repacking',
+        'cost_of_repacking',
         'status',
         'content_description',
         'notes',
@@ -39,7 +39,6 @@ class Parcel extends Model
         'opened_notes',
         'is_damaged',
         'damaged_notes',
-        'scale_photo_path',
         'new_actual_weight'
     ];
 
