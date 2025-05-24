@@ -19,7 +19,7 @@ class AdminController extends Controller
     {
         return $this->adminService->getcontentpracel();
     }
-    
+
     public function storecontentpracel(Request $request)
     {
         $validation =  $request->validate([
@@ -49,7 +49,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:9|unique:countries,code',
         ]);
-        
+
        return $this->adminService->createCountry($data);
 
     }
@@ -95,5 +95,16 @@ class AdminController extends Controller
     public function destroyDelivery($id)
     {
         return $this->adminService->deleteDelivery($id);
+    }
+
+    public function storeFixedCost(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255|unique:fixed_costs,name',
+            'value' => 'required|numeric|min:0',
+            'description' => 'nullable|string|max:500'
+        ]);
+
+        return $this->adminService->createFixedCost($data);
     }
 }

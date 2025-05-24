@@ -76,4 +76,11 @@ class AdminService{
     {
         return $this->successResponse($this->adminRepo->getAllDelivery(),'Successfuly',200);
     }
+
+    public function createFixedCost(array $data)
+    {
+        $data['created_by_user_id'] = auth()->id();
+        $data = $this->adminRepo->createFixedCost($data);
+        return $this->successResponse($data,'Successfuly',200);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Repositories;
 use App\Models\Country;
 use App\Models\DeliveryStaff;
 use App\Models\ParcelManage;
+use App\Models\FixedCost;
 
 class AdminRepository{
 
@@ -71,5 +72,10 @@ class AdminRepository{
     public function findDelivery(int $id)
     {
         return DeliveryStaff::find($id);
+    }
+
+    public function createFixedCost(array $data)
+    {
+        return FixedCost::create($data);
     }
 }

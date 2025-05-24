@@ -31,4 +31,7 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/dalete/delivery-staff/{id}', [AdminController::class, 'destroyDelivery']);
 
 
+    Route::post('/store/fixed-costs', [AdminController::class, 'storeFixedCost']);
+
+
 });
