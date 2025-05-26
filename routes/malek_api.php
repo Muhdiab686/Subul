@@ -16,6 +16,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/add/Customar', [ManagerController::class, 'addCustomer']);
     Route::get('/getAll/Customers', [ManagerController::class, 'getAllCustomers']);
+    Route::get('/getAll/companies', [ManagerController::class, 'getAllCompanies']);
     Route::delete('/delete/Customer/{id}', [ManagerController::class, 'deleteCustomer']);
 
     Route::get('/get/approved/shipments', [ManagerController::class, 'get_approved_Shipments']);

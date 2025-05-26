@@ -153,7 +153,13 @@ class WarehousemanService
         $data['scale_photo_upload'] = $ScalePhotoPath;
 
 
-        if (!$data['needs_repacking']) {
+        if ($data['needs_repacking']) {
+            $repackingCost = $this->warehousemanRepository->getRepackingCost();
+            if ($repackingCost === null) {
+                return $this->errorResponse('تكلفة إعادة التعبئة غير محددة في النظام', 404);
+            }
+            $data['cost_of_repacking'] = $repackingCost;
+        } else {
             $data['cost_of_repacking'] = null;
         }
 

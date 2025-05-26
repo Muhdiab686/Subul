@@ -106,7 +106,6 @@ class WarehousemanController extends Controller
             'brand_type' => 'required|string',
             'is_fragile' => 'required|boolean',
             'needs_repacking' => 'required|boolean',
-            'cost_of_repacking' => 'required_if:needs_repacking,true|numeric|min:0|nullable',
             'notes' => 'nullable|string',
             'print_notes' => 'nullable|string'
         ]);

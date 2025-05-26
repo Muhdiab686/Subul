@@ -68,7 +68,16 @@ class ManagerService
             'customer_code' => $customerCode,
             'verified_code' => $verifiedCode,
             'role' => $data['is_company'] ? 'company' : 'customer',
+            'parent_company_id' => $data['parent_company_id']?? null,
         ];
+
+
+        if (isset($data['parent_company_id'])) {
+            $parentCompany = $this->managerRepository->findCustomer($data['parent_company_id']);
+            if (!$parentCompany || $parentCompany->role !== 'company') {
+                return $this->errorResponse('الشركة الأم غير صالحة', 422);
+            }
+        }
 
         $data = $this->managerRepository->createCustomer($userData);
         return $this->successResponse($data,'user Successfuly created',200);
@@ -80,6 +89,12 @@ class ManagerService
         public function getAllCustomers()
     {
         $data = $this->managerRepository->getAllCustomers();
+        return $this->successResponse($data,' Successfuly ',200);
+    }
+
+    public function getAllCompanies(array $filters)
+    {
+        $data = $this->managerRepository->getAllCompanies($filters);
         return $this->successResponse($data,' Successfuly ',200);
     }
 
@@ -306,7 +321,7 @@ class ManagerService
         ];
 
 
-        $invoice = $this->managerRepository->createInvoice($invoiceData);
+        $data = $this->managerRepository->createInvoice($invoiceData);
 
         $this->managerRepository->updateShipmentStatus($data['shipment_id'], 'in_the_way');
 
@@ -356,6 +371,8 @@ class ManagerService
 
 
 }
+
+
 
 
 

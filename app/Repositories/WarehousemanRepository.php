@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Models\Shipment;
 use App\Models\Supplier;
 use App\Models\Parcel;
+use App\Models\FixedCost;
 use Illuminate\Support\Facades\Hash;
 
 
@@ -31,6 +32,14 @@ class WarehousemanRepository
     public function createShipment(array $data)
     {
         return Shipment::create($data);
+    }
+
+    public function getRepackingCost()
+    {
+        $fixedCost = FixedCost::where('name', 'cost_of_repacking')
+                              ->where('is_active', true)
+                              ->first();
+        return $fixedCost ? $fixedCost->value : null;
     }
 
     public function createParcel(array $data)
@@ -86,5 +95,6 @@ class WarehousemanRepository
             'shipment.destinationCountry',
         ])->findOrFail($parcel_id);
     }
+
 
 }

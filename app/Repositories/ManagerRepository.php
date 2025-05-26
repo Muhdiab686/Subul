@@ -102,4 +102,23 @@ class ManagerRepository
         ->where('id', $invoice_id)
         ->first();
 }
+    public function getAllCompanies(array $filters)
+    {
+        $query = User::where('role', 'company');
+
+        if (!empty($filters['name'])) {
+            $query->where(function($q) use ($filters) {
+                $q->where('first_name', 'like', '%' . $filters['name'] . '%')
+                  ->orWhere('last_name', 'like', '%' . $filters['name'] . '%');
+            });
+        }
+
+        if (!empty($filters['customer_code'])) {
+            $query->where('customer_code', $filters['customer_code']);
+        }
+
+        return $query->with(['subsidiaries' => function($query) {
+            $query->where('role', 'customer');
+        }])->get();
+    }
 }

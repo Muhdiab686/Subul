@@ -31,6 +31,7 @@ class ManagerController extends Controller
             'profile_photo_path'=> 'nullable|image',
             'identity_photo_path'=>'nullable|image',
             'is_company' => 'required|boolean',
+            'parent_company_id' => 'nullable|exists:users,id',
         ]);
 
        return $this->managerService->addCustomer($validated);
@@ -40,6 +41,15 @@ class ManagerController extends Controller
     public function getAllCustomers()
     {
         return $this->managerService->getAllCustomers();
+    }
+    public function getAllCompanies(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'customer_code' => 'nullable|string|max:255'
+        ]);
+
+        return $this->managerService->getAllCompanies($validated);
     }
 
 
@@ -58,6 +68,8 @@ class ManagerController extends Controller
     {
         return $this->managerService->get_unapproved_Shipments();
     }
+
+
 
 
     public function getCustomerShipments(Request $request)

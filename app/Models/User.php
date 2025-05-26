@@ -31,6 +31,7 @@ class User extends Authenticatable implements JWTSubject
         'profile_photo_path',
         'identity_photo_path',
         'customer_code',
+
     ];
 
     protected $hidden = [
@@ -46,6 +47,11 @@ class User extends Authenticatable implements JWTSubject
     public function parentCompany()
     {
         return $this->belongsTo(User::class, 'parent_company_id');
+    }
+
+    public function subsidiaries()
+    {
+        return $this->hasMany(User::class, 'parent_company_id');
     }
 
     public function shippingCompany()
