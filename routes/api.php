@@ -34,4 +34,9 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/store/fixed-costs', [AdminController::class, 'storeFixedCost']);
 
 
+
+    Route::get('/users', [AdminController::class, 'getUsers']);
+    Route::delete('/delete/users/{id}', [AdminController::class, 'deleteUser']);
+    Route::put('/update/users/role/{id}', [AdminController::class, 'updateUserRole']);
+
 });

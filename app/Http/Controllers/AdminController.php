@@ -144,4 +144,29 @@ class AdminController extends Controller
 
         return $this->adminService->createFixedCost($validator->validated());
     }
+
+
+    // User Methods
+    public function getUsers()
+    {
+        return $this->adminService->getUsers();
+    }
+
+    public function deleteUser($id)
+    {
+        return $this->adminService->deleteUser($id);
+    }
+
+    public function updateUserRole(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'role' => 'required|string|in:admin,manager,warehouseman,company,customer',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse('Validation error', 422, $validator->errors());
+        }
+
+        return $this->adminService->updateUserRole($id, $validator->validated()['role']);
+    }
 }

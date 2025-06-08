@@ -83,4 +83,28 @@ class AdminService{
         $data = $this->adminRepo->createFixedCost($data);
         return $this->successResponse($data,'Successfuly',200);
     }
+
+    public function getUsers()
+    {
+        $data = $this->adminRepo->getUsers();
+        return $this->successResponse($data, 'Successfully', 200);
+    }
+
+    public function deleteUser($id)
+    {
+        $result = $this->adminRepo->deleteUser($id);
+        if ($result) {
+            return $this->successResponse(null, 'User deleted successfully', 200);
+        }
+        return $this->errorResponse('User not found', 404);
+    }
+
+    public function updateUserRole(int $id, string $role)
+    {
+        $user = $this->adminRepo->updateUserRole($id, $role);
+        if ($user) {
+            return $this->successResponse($user, 'User role updated successfully', 200);
+        }
+        return $this->errorResponse('User not found', 404);
+    }
 }

@@ -78,4 +78,31 @@ class AdminRepository{
     {
         return FixedCost::create($data);
     }
+
+    // User Methods
+    public function getUsers()
+    {
+        return \App\Models\User::select('id', 'role', 'first_name', 'last_name', 'email', 'phone')
+            ->get();
+    }
+
+    public function deleteUser($id)
+    {
+        $user = \App\Models\User::find($id);
+        if ($user) {
+            return $user->delete();
+        }
+        return false;
+    }
+
+    public function updateUserRole(int $id, string $role)
+    {
+        $user = \App\Models\User::find($id);
+        if ($user) {
+            $user->role = $role;
+            $user->save();
+            return $user;
+        }
+        return false;
+    }
 }
