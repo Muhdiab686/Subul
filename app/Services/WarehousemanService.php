@@ -759,5 +759,17 @@ class WarehousemanService
             return $this->errorResponse('Failed to retrieve invoice details', 500);
         }
     }
+    public function getInvoicemy($useId)
+    {
+   
+         
+
+        $invoiceData = $this->warehousemanRepository->getInvoicemy($useId);
+        if (!$invoiceData) {
+            return $this->errorResponse('Invoice not found for this shipment', 404);
+        }
+
+        return $this->successResponse($invoiceData, 'Invoice details retrieved successfully.', 200);
+    }
 
 }

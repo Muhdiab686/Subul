@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Repositories;
 
+use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Shipment;
 use App\Models\Supplier;
@@ -32,9 +34,9 @@ class WarehousemanRepository
         $query = Supplier::query();
 
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -42,7 +44,7 @@ class WarehousemanRepository
     }
 
 
-  
+
 
 
     public function createShipment(array $data)
@@ -53,16 +55,16 @@ class WarehousemanRepository
     public function getRepackingCost()
     {
         $fixedCost = FixedCost::where('name', 'cost_of_repacking')
-                              ->where('is_active', true)
-                              ->first();
+            ->where('is_active', true)
+            ->first();
         return $fixedCost ? $fixedCost->value : null;
     }
 
     public function getFragileCost()
     {
         $fixedCost = FixedCost::where('name', 'cost_of_is_fragile')
-                              ->where('is_active', true)
-                              ->first();
+            ->where('is_active', true)
+            ->first();
         return $fixedCost ? $fixedCost->value : null;
     }
 
@@ -105,7 +107,7 @@ class WarehousemanRepository
 
         return Shipment::where('status', 'in_process')
             ->where('delivered_to_WH_dis', false)
-            ->whereHas('originCountry', function($query) use ($currentUser) {
+            ->whereHas('originCountry', function ($query) use ($currentUser) {
                 $query->where('name', $currentUser->address);
             })
             ->with(['customer', 'supplier', 'originCountry', 'destinationCountry', 'creator'])
@@ -119,7 +121,7 @@ class WarehousemanRepository
         return Shipment::where('status', 'in_the_way')
             // ->where('delivered_to_WH_dis', true)
             ->whereNull('warehouse_received_at') // Exclude shipments that have been received at warehouse
-            ->whereHas('destinationCountry', function($query) use ($currentUser) {
+            ->whereHas('destinationCountry', function ($query) use ($currentUser) {
                 $query->where('name', $currentUser->address);
             })
             ->with(['customer', 'supplier', 'originCountry', 'destinationCountry', 'creator'])
@@ -139,10 +141,10 @@ class WarehousemanRepository
             'users.first_name',
             'users.last_name'
         ])
-        ->join('shipments', 'parcels.shipment_id', '=', 'shipments.id')
-        ->join('users', 'shipments.customer_id', '=', 'users.id')
-        ->withCount('items')
-        ->get();
+            ->join('shipments', 'parcels.shipment_id', '=', 'shipments.id')
+            ->join('users', 'shipments.customer_id', '=', 'users.id')
+            ->withCount('items')
+            ->get();
     }
 
     public function getParcelsByShipmentId($shipment_id)
@@ -159,11 +161,11 @@ class WarehousemanRepository
             'users.first_name',
             'users.last_name'
         ])
-        ->join('shipments', 'parcels.shipment_id', '=', 'shipments.id')
-        ->join('users', 'shipments.customer_id', '=', 'users.id')
-        ->where('parcels.shipment_id', $shipment_id)
-        ->withCount('items')
-        ->get();
+            ->join('shipments', 'parcels.shipment_id', '=', 'shipments.id')
+            ->join('users', 'shipments.customer_id', '=', 'users.id')
+            ->where('parcels.shipment_id', $shipment_id)
+            ->withCount('items')
+            ->get();
     }
 
     public function getParcelByParcelId($parcel_id)
@@ -219,8 +221,8 @@ class WarehousemanRepository
     public function getDeliveryDestinationCost()
     {
         $fixedCost = FixedCost::where('name', 'cost_delivery_destination')
-                              ->where('is_active', true)
-                              ->first();
+            ->where('is_active', true)
+            ->first();
         return $fixedCost ? $fixedCost->value : null;
     }
 
@@ -272,7 +274,7 @@ class WarehousemanRepository
         ];
     }
 
-        public function getWarehouseCosts()
+    public function getWarehouseCosts()
     {
         $costs = [];
         $missingCosts = [];
@@ -286,8 +288,8 @@ class WarehousemanRepository
 
         foreach ($costNames as $costName) {
             $fixedCost = FixedCost::where('name', $costName)
-                                  ->where('is_active', true)
-                                  ->first();
+                ->where('is_active', true)
+                ->first();
             if ($fixedCost) {
                 $costs[$costName] = $fixedCost->value;
             } else {
@@ -313,7 +315,6 @@ class WarehousemanRepository
 
             foreach ($costs as $costName => $costValue) {
                 $updateData[$costName] = $costValue;
-
             }
 
 
@@ -336,15 +337,15 @@ class WarehousemanRepository
         $query = Shipment::with(['customer', 'parcels'])
             ->where('delivered_to_WH_dis', true)
             ->where('mark_as_delivered', false) // Exclude delivered shipments
-            ->whereHas('parcels', function($parcelQuery) {
+            ->whereHas('parcels', function ($parcelQuery) {
                 $parcelQuery->where('status', 'deliverable');
             })
-            ->whereDoesntHave('parcels', function($parcelQuery) {
+            ->whereDoesntHave('parcels', function ($parcelQuery) {
                 $parcelQuery->where('status', '!=', 'deliverable');
             });
 
         if ($customerCode) {
-            $query->whereHas('customer', function($customerQuery) use ($customerCode) {
+            $query->whereHas('customer', function ($customerQuery) use ($customerCode) {
                 $customerQuery->where('customer_code', $customerCode);
             });
         }
@@ -456,4 +457,81 @@ class WarehousemanRepository
         ];
     }
 
+    public function getInvoicemy($userId)
+    {
+        $invoice = Invoice::where('customer_id', $userId)
+            ->with(['shipment.parcels', 'shipment.customer'])
+            ->first();
+
+        if (!$invoice || !$invoice->shipment) {
+            return null;
+        }
+
+        $shipment = $invoice->shipment;
+
+        // حساب الوزن الكلي من الطرود
+        $totalWeight = 0;
+        foreach ($shipment->parcels as $parcel) {
+            // الوزن الحجمي
+            $dimensionalWeight = ($parcel->length * $parcel->width * $parcel->height) / 5000;
+
+            // نختار الأكبر بين الوزن الفعلي والحجمي
+            $finalWeight = max(
+                $parcel->new_actual_weight ?? $parcel->actual_weight ?? 0,
+                $dimensionalWeight
+            );
+
+            $totalWeight += $finalWeight;
+        }
+
+        // حساب تكلفة الشحن الجوي
+        $airFreightCost = $totalWeight * ($invoice->cost_air_freight ?? 0);
+
+        // حساب التكاليف
+        $totalCosts = [
+            'amount' => $invoice->amount ?? 0,
+            'tax_amount' => $invoice->tax_amount ?? 0,
+            'cost_of_repacking' => $invoice->cost_of_repacking ?? 0,
+            'cost_of_is_fragile' => $invoice->cost_of_is_fragile ?? 0,
+            'cost_delivery_origin' => $invoice->cost_delivery_origin ?? 0,
+            'cost_express_origin' => $invoice->cost_express_origin ?? 0,
+            'cost_customs_origin' => $invoice->cost_customs_origin ?? 0,
+            'cost_delivery_destination' => $invoice->cost_delivery_destination ?? 0,
+            'air_freight_cost' => $airFreightCost
+        ];
+
+        $grandTotal = array_sum($totalCosts);
+
+        return [
+            'invoice_details' => [
+                'id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'currency' => $invoice->currency,
+                'status' => $invoice->status,
+                'payable_at' => $invoice->payable_at ? Carbon::parse($invoice->payable_at)->format('Y-m-d') : null,
+                'paid_at' => $invoice->paid_at ? $invoice->paid_at->format('Y-m-d') : null,
+                'payment_method' => $invoice->payment_method,
+                'includes_tax' => $invoice->includes_tax,
+                'adjustment_reason' => $invoice->adjustment_reason,
+                'adjusted_amount' => $invoice->adjusted_amount,
+            ],
+            'shipment_details' => [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'status' => $shipment->status,
+                'created_at' => $shipment->created_at->format('Y-m-d H:i:s')
+            ],
+            'customer_details' => [
+                'id' => $shipment->customer->id,
+                'name' => $shipment->customer->first_name . ' ' . $shipment->customer->last_name,
+                'customer_code' => $shipment->customer->customer_code,
+                'email' => $shipment->customer->email,
+                'phone' => $shipment->customer->phone
+            ],
+            'costs_breakdown' => $totalCosts,
+            'total_weight' => round($totalWeight, 2),
+            'grand_total' => $grandTotal
+        ];
+    }
 }

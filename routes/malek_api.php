@@ -11,6 +11,7 @@ use App\Http\Middleware\AdminRole;
 
 
 Route::middleware('auth:api')->group(function () {
+    Route::get('/get/invoice-details/{shipment_id}', [WarehousemanController::class, 'getInvoiceDetails']);
 
 
     Route::post('/create/shipments', [WarehousemanController::class, 'createShipment']);
@@ -75,5 +76,4 @@ Route::middleware(['auth:api', AdminRole::class . ':warehouseman'])->group(funct
     Route::post('/update/parcel-info/{parcel_id}', [WarehousemanController::class, 'updateParcelInfo']);
     Route::get('/get/deliverable-shipments', [WarehousemanController::class, 'getDeliverableShipments']);
     Route::post('/mark-shipment-delivered/{shipment_id}', [WarehousemanController::class, 'markShipmentAsDelivered']);
-    Route::get('/get/invoice-details/{shipment_id}', [WarehousemanController::class, 'getInvoiceDetails']);
 });

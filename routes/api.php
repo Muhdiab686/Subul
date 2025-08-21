@@ -16,6 +16,8 @@ Route::post('login', [AuthController::class, 'login']);
 Route::get('/my/shipments', [AdminController::class, 'getshipments']);
 
 Route::middleware(['auth:api', AdminRole::class . ':customer,company'])->group(function () {
+    Route::get('/get/invoicemy', [WarehousemanController::class, 'getInvoicemy']);
+
     Route::get('my/shipment', [AdminController::class, 'getmyshipments']);
     Route::post('/create/shipment', [WarehousemanController::class, 'createShipment']);
 });
