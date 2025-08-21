@@ -1,0 +1,487 @@
+<?php
+
+namespace App\Services;
+
+use App\Repositories\ManagerRepository;
+use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode as QrCodeGenerator;
+
+class ManagerService
+{
+    use ApiResponseTrait;
+
+    protected $managerRepository;
+
+    public function __construct(ManagerRepository $managerRepository)
+    {
+        $this->managerRepository = $managerRepository;
+    }
+
+    private function generateCustomerCode()
+    {
+        $letters = strtoupper(substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 2));
+        $numbers = rand(100, 999);
+        $suffix = rand(10, 99);
+        return "$letters-$numbers-$suffix";
+    }
+
+    private function generateVerifiedCode()
+    {
+        return rand(100000, 999999);
+    }
+
+    public function addCustomer(array $data)
+    {
+        $customerCode = $this->generateCustomerCode();
+        $verifiedCode = $this->generateVerifiedCode();
+
+        $profilePhotoPath = null;
+        if (isset($data['profile_photo_path'])) {
+            $filename = Str::uuid() . '.' . $data['profile_photo_path']->getClientOriginalExtension();
+            $data['profile_photo_path']->move(public_path('/uploads/profile_photos'), $filename);
+            $profilePhotoPath = '/uploads/profile_photos/' . $filename;
+        }
+
+        $identityPhotoPath = null;
+        if (isset($data['identity_photo_path'])) {
+            $filename = Str::uuid() . '.' . $data['identity_photo_path']->getClientOriginalExtension();
+            $data['identity_photo_path']->move(public_path('/uploads/identity_photos'), $filename);
+            $identityPhotoPath = '/uploads/identity_photos/' . $filename;
+        }
+
+        $userData = [
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'] ?? null,
+            'email' => $data['email'],
+            'password' => $data['password'],
+            'phone' => $data['phone'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'address' => $data['address'] ?? null,
+            'timezone' => $data['timezone'] ?? null,
+            'profile_photo_path' => $profilePhotoPath,
+            'identity_photo_path' => $identityPhotoPath,
+            'status' => 1,
+            'customer_code' => $customerCode,
+            'verified_code' => $verifiedCode,
+            'role' => $data['is_company'] ? 'company' : 'customer',
+            'parent_company_id' => $data['parent_company_id'] ?? null,
+        ];
+
+        if (isset($data['parent_company_id'])) {
+            $parentCompany = $this->managerRepository->findCustomer($data['parent_company_id']);
+            if (!$parentCompany || $parentCompany->role !== 'company') {
+                return $this->errorResponse('Invalid parent company', 422);
+            }
+        }
+
+        $user = $this->managerRepository->createCustomer($userData);
+
+        if (!$user) {
+            return $this->errorResponse('Failed to create customer', 500);
+        }
+
+        return $this->successResponse(null, 'user created successfully', 200);
+    }
+
+    public function getAllCustomers($search = null)
+    {
+        $query = $this->managerRepository->getAllCustomers();
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('customer_code', 'like', "%{$search}%");
+            });
+        }
+
+        $data = $query->get();
+
+        if ($data->isEmpty()) {
+            return $this->errorResponse('No customers found.', 200);
+        }
+        return $this->successResponse($data, 'Customers retrieved successfully.', 200);
+    }
+
+
+    public function getAllCompanies(array $filters)
+    {
+        $companies = $this->managerRepository->getAllCompanies($filters);
+        if ($companies->isEmpty()) {
+            return $this->errorResponse('No companies found', 200);
+        }
+
+        $data = $companies->map(function ($company) {
+            return [
+                'id' => $company->id,
+                'role' => $company->role,
+                'first_name' => $company->first_name,
+                'email' => $company->email,
+                'phone' => $company->phone,
+                'address' => $company->address,
+                'timezone' => $company->timezone,
+                'profile_photo_path' => $company->profile_photo_path,
+            ];
+        });
+
+        return $this->successResponse($data, 'Companies retrieved successfully', 200);
+    }
+
+    public function deleteCustomer($id)
+    {
+        $customer = $this->managerRepository->findCustomer($id);
+
+        if (!$customer) {
+            return $this->errorResponse('Customer not found', 200);
+        }
+
+        if (!in_array($customer->role, ['customer', 'company'])) {
+            return $this->errorResponse('Unauthorized operation', 403);
+        }
+
+        $deleted = $this->managerRepository->deleteCustomer($customer);
+        if (!$deleted) {
+            return $this->errorResponse('Failed to delete customer', 500);
+        }
+
+        return $this->successResponse(null, 'Customer deleted successfully', 200);
+    }
+
+    public function getAllShipments()
+    {
+        $shipments = $this->managerRepository->getAllShipments();
+
+        if ($shipments->isEmpty()) {
+            return $this->errorResponse('No shipments found.', 200);
+        }
+
+        $shipments->load('customer:id,first_name,last_name');
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_name' => optional($shipment->customer)->first_name && optional($shipment->customer)->last_name
+                    ? optional($shipment->customer)->first_name . ' ' . optional($shipment->customer)->last_name
+                    : null,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data, 'All shipments retrieved successfully', 200);
+    }
+
+
+    public function get_approved_Shipments($search = null)
+    {
+        $query = $this->managerRepository->get_approved_Shipments();
+
+        if (!empty($search)) {
+            $query->whereHas('customer', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('customer_code', 'like', "%{$search}%");
+            });
+        }
+
+        $shipments = $query->get();
+
+        if ($shipments->isEmpty()) {
+            return $this->errorResponse('No approved shipments found.', 200);
+        }
+
+        $shipments->load('customer:id,first_name,last_name');
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_id' => $shipment->customer_id,
+                'customer_name' => optional($shipment->customer)->first_name && optional($shipment->customer)->last_name
+                    ? optional($shipment->customer)->first_name . ' ' . optional($shipment->customer)->last_name
+                    : null,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data, 'Approved shipments retrieved successfully', 200);
+    }
+
+
+
+    public function get_unapproved_Shipments($search = null)
+    {
+        $query = $this->managerRepository->get_unapproved_Shipments();
+
+        if (!empty($search)) {
+            $query->whereHas('customer', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('customer_code', 'like', "%{$search}%");
+            });
+        }
+
+        $shipments = $query->get();
+
+        if ($shipments->isEmpty()) {
+            return $this->errorResponse('No unapproved shipments found.', 200);
+        }
+
+        $shipments->load('customer:id,first_name,last_name');
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_id' => $shipment->customer_id,
+                'customer_name' => optional($shipment->customer)->first_name && optional($shipment->customer)->last_name
+                    ? optional($shipment->customer)->first_name . ' ' . optional($shipment->customer)->last_name
+                    : null,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data, 'Unapproved shipments retrieved successfully', 200);
+    }
+
+
+
+
+    public function approveShipment($shipmentId)
+    {
+        $shipment = $this->managerRepository->approveShipment($shipmentId);
+
+        if (!$shipment) {
+            return $this->errorResponse('Shipment not found', 200);
+        }
+
+        return $this->successResponse(null, 'Shipment approved successfully', 200);
+    }
+
+
+    public function getCustomerShipments($customerCode)
+    {
+        $shipments = $this->managerRepository->getCustomerShipments($customerCode);
+
+        if ($shipments->isEmpty()) {
+            return $this->errorResponse('No shipments found for this customer.', 200);
+        }
+
+        $shipments->load('customer:id,first_name,last_name');
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'customer_name' => optional($shipment->customer)->first_name && optional($shipment->customer)->last_name
+                    ? optional($shipment->customer)->first_name . ' ' . optional($shipment->customer)->last_name
+                    : null,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data, 'Customer shipments retrieved successfully', 200);
+    }
+
+
+    public function rejectShipment(array $data)
+    {
+        $shipment = $this->managerRepository->rejectShipment(
+            $data['shipment_id'],
+            $data['cancellation_reason']
+        );
+        if (!$shipment) {
+            return $this->errorResponse('Failed to reject shipment', 400);
+        }
+        return $this->successResponse($shipment, 'Shipment rejected successfully', 200);
+    }
+
+    public function getRejectedShipments()
+    {
+        $shipments = $this->managerRepository->getRejectedShipments();
+
+        if ($shipments->isEmpty()) {
+            return $this->errorResponse('No rejected shipments found.', 200);
+        }
+
+        $shipments->load('customer:id,first_name,last_name');
+
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'tracking_number' => $shipment->tracking_number,
+                'customer_name' => optional($shipment->customer)->first_name && optional($shipment->customer)->last_name
+                    ? optional($shipment->customer)->first_name . ' ' . optional($shipment->customer)->last_name
+                    : null,
+                'type' => $shipment->type,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'status' => $shipment->status,
+                'cancellation_reason' => $shipment->cancellation_reason,
+                'created_at' => $shipment->created_at
+            ];
+        });
+
+        return $this->successResponse($data, 'Rejected shipments retrieved successfully', 200);
+    }
+
+    public function getShipmentById($shipmentId)
+    {
+        $shipment = $this->managerRepository->getShipmentById($shipmentId);
+
+        if (!$shipment) {
+            return $this->errorResponse('Shipment not found', 200);
+        }
+
+        $shipment->load('customer:id,first_name,last_name');
+
+        $data = [
+            'id' => $shipment->id,
+            'tracking_number' => $shipment->tracking_number,
+            'type' => $shipment->type,
+            'customer_name' => optional($shipment->customer)->first_name && optional($shipment->customer)->last_name
+                ? optional($shipment->customer)->first_name . ' ' . optional($shipment->customer)->last_name
+                : null,
+            'supplier_name' => optional($shipment->supplier)->name,
+            'supplier_number' => optional($shipment->supplier)->phone,
+            'status' => $shipment->status,
+            'declared_parcels_count' => $shipment->declared_parcels_count,
+            'actual_parcels_count' => $shipment->actual_parcels_count,
+            'notes' => $shipment->notes,
+            'created_at' => $shipment->created_at
+        ];
+
+        return $this->successResponse($data, 'Shipment details retrieved successfully', 200);
+    }
+
+
+    private function generateQRCode($shipmentId, $invoiceId)
+    {
+        $qrData = json_encode([
+            'shipment_id' => $shipmentId
+        ]);
+
+        $filename = Str::uuid() . '.svg';
+        $qrPath = '/uploads/qr_codes/' . $filename;
+
+        if (!file_exists(public_path('/uploads/qr_codes'))) {
+            mkdir(public_path('/uploads/qr_codes'), 0777, true);
+        }
+
+        QrCodeGenerator::size(300)
+            ->errorCorrection('H')
+            ->generate($qrData, public_path($qrPath));
+
+        $qrCodeData = [
+            'shipment_id' => $shipmentId,
+            'invoice_id' => $invoiceId,
+            'qr_code_path' => $qrPath,
+            'qr_code_data' => $qrData
+        ];
+
+        return $this->managerRepository->createQRCode($qrCodeData);
+    }
+
+    private function generateInvoiceNumber()
+    {
+        $lastInvoice = $this->managerRepository->getLastInvoice();
+
+        if (!$lastInvoice) {
+            $number = 1;
+        } else {
+            $lastNumber = (int) substr($lastInvoice->invoice_number, 4);
+            $number = $lastNumber + 1;
+        }
+
+        return 'INV-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function createInvoice(array $data)
+    {
+        $invoiceNumber = $this->generateInvoiceNumber();
+
+        $totalAmount = $data['amount'];
+        $taxAmount = null;
+
+        if ($data['includes_tax']) {
+            // الحصول على قيمة الضريبة من جدول fixed_costs
+            $taxCost = $this->managerRepository->getTaxAmount();
+
+            if (!$taxCost) {
+                return $this->errorResponse('Tax amount not found in fixed costs', 422);
+            }
+
+            $taxAmount = $taxCost->value;
+            $totalAmount += $taxAmount;
+        }
+
+        $invoiceData = [
+            'customer_id' => $data['customer_id'],
+            'shipment_id' => $data['shipment_id'],
+            'invoice_number' => $invoiceNumber,
+            'amount' => $data['amount'],
+            'includes_tax' => $data['includes_tax'],
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+            'payable_at' => $data['payable_at'],
+            'status' => 'not_paid'
+        ];
+
+        $invoice = $this->managerRepository->createInvoice($invoiceData);
+
+
+        $this->managerRepository->updateShipmentStatus($data['shipment_id'], 'in_process');
+
+        return $this->successResponse($invoice, 'Invoice created successfully', 200);
+    }
+
+    public function getInvoiceDetails($invoice_id)
+    {
+        $invoice = $this->managerRepository->getInvoiceWithDetails($invoice_id);
+
+        if (!$invoice) {
+            return $this->errorResponse('Invoice not found', 200);
+        }
+
+        // توليد QR إذا غير موجود
+        if (!$invoice->qrcode) {
+            $qrCode = $this->generateQRCode($invoice->shipment_id, $invoice->id);
+            $qrCodePath = $qrCode->qr_code_path;
+        } else {
+            $qrCodePath = $invoice->qrcode->qr_code_path;
+        }
+
+        $data = [
+            'invoice_details' => [
+                'id' => $invoice->id,
+                'payable_at' => date('d/m/Y', strtotime($invoice->payable_at)),
+                'invoice_number' => $invoice->invoice_number,
+                'amount' => $invoice->amount,
+                'name' => optional($invoice->customer)->first_name && optional($invoice->customer)->last_name
+                    ? optional($invoice->customer)->first_name . ' ' . optional($invoice->customer)->last_name
+                    : null,
+                'phone' => optional($invoice->customer)->phone,
+                'customer_code' => optional($invoice->customer)->customer_code,
+                'declared_parcels_count' => optional($invoice->shipment)->declared_parcels_count,
+                'supplier_name' => optional($invoice->shipment)->supplier_name,
+                'qr_code' => $qrCodePath,
+            ],
+            'tax_amount' => $invoice->tax_amount,
+            'total_amount' => $invoice->total_amount,
+            'includes_tax' => $invoice->includes_tax,
+            'status' => $invoice->status,
+            'created_at' => date('d/m/Y', strtotime($invoice->created_at)),
+        ];
+
+        return $this->successResponse($data, 'Invoice details retrieved successfully', 200);
+    }
+}
