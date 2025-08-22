@@ -44,6 +44,21 @@ class User extends Authenticatable implements JWTSubject
         'phone_verified_at' => 'datetime',
     ];
 
+    public static function booted()
+    {
+        static::created(function ($user) {
+            $user->wallet()->create(['balance' => 500]);
+        });
+    }
+    public function payments()
+        {
+            return $this->hasMany(Payment::class);
+        }
+    public function wallet()
+    {
+        return $this->hasOne(UserWallet::class);
+    }
+
     public function parentCompany()
     {
         return $this->belongsTo(User::class, 'parent_company_id');

@@ -10,6 +10,7 @@ use App\Http\Controllers\WarehousemanController;
 
 use App\Http\Middleware\AdminRole;
 
+Route::post('/stripe/webhook', [AuthController::class, 'handleStripeWebhook']);
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -21,6 +22,12 @@ Route::middleware(['auth:api', AdminRole::class . ':customer,company'])->group(f
 
     Route::get('my/shipment', [AdminController::class, 'getmyshipments']);
     Route::post('/create/shipment', [WarehousemanController::class, 'createShipment']);
+    
+    Route::get('/wallet', [AuthController::class, 'myBalance']);
+    Route::get('/payments', [AuthController::class, 'myPayments']);
+
+    Route::get('/invoice/{invoice_id}/checkout', [AuthController::class, 'createInvoiceCheckoutLink']);
+
 });
 
 

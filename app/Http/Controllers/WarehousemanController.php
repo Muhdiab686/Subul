@@ -356,7 +356,6 @@ class WarehousemanController extends Controller
     }
     public function getInvoicemy()
     {
-       
         $useId = Auth()->user()->id;
         return $this->warehousemanService->getInvoicemy($useId);
     }
