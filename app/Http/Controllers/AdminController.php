@@ -203,6 +203,35 @@ class AdminController extends Controller
         return $this->adminService->getAllComplaints();
     }
 
+    public function createComplaint(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'description' => 'required|string|min:5',
+            'shipment_id' => 'nullable|exists:shipments,id',
+            'parcel_id'   => 'nullable|exists:parcels,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $userId = auth()->id();
+
+        $complaint = $this->adminService->createComplaint(
+            $userId,
+            $validator->validated()['description'],
+            $validator->validated()['shipment_id'] ?? null,
+            $validator->validated()['parcel_id'] ?? null
+        );
+
+        return response()->json([
+            'message' => 'Complaint created successfully',
+            'data'    => $complaint,
+        ], 201);
+    }
     public function getComplaint($id)
     {
         $validator = Validator::make(['id' => $id], [
@@ -270,6 +299,6 @@ class AdminController extends Controller
     }
     public function getmyshipments()
     {
-        return $this->adminService->getshipments();
+        return $this->adminService->getmyshipments();
     }
 }

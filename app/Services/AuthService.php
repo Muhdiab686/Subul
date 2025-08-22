@@ -77,14 +77,32 @@ class AuthService
 
     public function login(array $credentials)
     {
+        // نحذف fcm_token من الcredentials قبل محاولة الدخول
+        $fcmToken = $credentials['fcm_token'] ?? null;
+        unset($credentials['fcm_token']);
+
         if (! $token = Auth::guard('api')->attempt($credentials)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
-        $data = ['user' => auth()->user(),
-                'role' => auth()->user()->role,
-                'token' => $token ];
-        return $this->successResponse($data,'Successfuly',200);
+
+        $user = User::where('email', $credentials['email'])->first();
+
+        // تحديث fcm_token إذا مرسل
+        if ($fcmToken) {
+            $user->FCM_TOKEN = $fcmToken;
+            $user->save();
+        }
+
+        $data = [
+            'user'  => $user,
+            'role'  => $user->role,
+            'token' => $token,
+            'fcm_token' =>$user->FCM_TOKEN
+        ];
+
+        return $this->successResponse($data, 'Successfully', 200);
     }
+
 }

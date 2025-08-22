@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Complaint;
+use App\Models\Shipment;
 use App\Repositories\AdminRepository;
 use App\Traits\ApiResponseTrait;
 use Carbon\Carbon;
@@ -170,10 +172,33 @@ class AdminService
         return $this->successResponse($data, 'All shipments retrieved successfully', 200);
     }
 
- public function getmyshipments(){
-        $shipments = $this->adminRepo->getmyshipments();
+   public function getMyShipments()
+{
+    $shipments = Shipment::with('parcels:id,shipment_id,status')
+        ->where('customer_id', auth()->id())
+        ->get();
 
- }
+    $data = $shipments->map(function ($shipment) {
+        return [
+            'id' => $shipment->id,
+            'tracking_number' => $shipment->tracking_number,
+            'type' => $shipment->type,
+            'status' => $shipment->status,
+            'declared_parcels_count' => $shipment->declared_parcels_count,
+            'created_at' => $shipment->created_at,
+            'parcels' => $shipment->parcels->map(function ($parcel) {
+                return [
+                    'id' => $parcel->id,
+                    'weight' => $parcel->weight,
+                    'status' => $parcel->status,
+                ];
+            }),
+        ];
+    });
+
+    return $this->successResponse($data, 'My shipments with parcels retrieved successfully.', 200);
+}
+
     public function getComplaintWithResponses($id)
     {
         $complaint = $this->adminRepo->getComplaintWithResponses($id);
@@ -209,6 +234,16 @@ class AdminService
         return $this->successResponse($data, 'Complaint details retrieved successfully.', 200);
     }
 
+    public function createComplaint($userId, $description, $shipmentId = null, $parcelId = null)
+    {
+        return Complaint::create([
+            'user_id' => $userId,
+            'shipment_id' => $shipmentId,
+            'parcel_id' => $parcelId,
+            'description' => $description,
+            'is_solved' => false,
+        ]);
+    }
 
     public function addComplaintResponse($complaintId, $userId, $content)
     {

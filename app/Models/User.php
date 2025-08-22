@@ -31,7 +31,7 @@ class User extends Authenticatable implements JWTSubject
         'profile_photo_path',
         'identity_photo_path',
         'customer_code',
-
+        'FCM_TOKEN'
     ];
 
     protected $hidden = [
@@ -64,26 +64,15 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Shipment::class, 'customer_id');
     }
 
-
-    public function deliveries()
+    public function complaints()
     {
-        return $this->hasMany(Delivery::class, 'driver_id');
+        return $this->hasMany(Complaint::class, 'user_id');
     }
 
-    public function wallet()
+    public function complaintResponses()
     {
-        return $this->hasOne(Wallet::class);
+        return $this->hasMany(ComplaintResponse::class, 'user_id');
     }
-
-public function complaints()
-{
-    return $this->hasMany(Complaint::class, 'user_id');
-}
-
-public function complaintResponses()
-{
-    return $this->hasMany(ComplaintResponse::class, 'user_id');
-}
 
     public function getJWTIdentifier()
     {

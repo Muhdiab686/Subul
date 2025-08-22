@@ -15,6 +15,30 @@ class ComplaintResponse extends Model
         'user_id'
     ];
 
+    public static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($response) {
+            $complaint = $response->complaint;
+
+            if ($response->user->role === 'admin') {
+                // رد الأدمن = تنحل الشكوى
+                $complaint->update([
+                    'is_solved' => true,
+                    'resolved_at' => now(),
+                    'resolution_notes' => 'Solved by admin response',
+                ]);
+            } else {
+                // رد المستخدم = إعادة فتح الشكوى
+                $complaint->update([
+                    'is_solved' => false,
+                    'resolved_at' => null,
+                    'resolution_notes' => null,
+                ]);
+            }
+        });
+    }
     // علاقة الشكوى الأم
     public function complaint()
     {

@@ -149,7 +149,7 @@ class AdminRepository
         return $query->get();
     }
 
-    public function getmyshipments($status = null)
+    public function getmyshipments()
     {
         return Shipment::where('customer_id', Auth()->user()->id)->get();
 
@@ -175,6 +175,7 @@ class AdminRepository
             'content' => $content,
         ]);
     }
+
 
 
     public function markComplaintAsSolved($complaintId)
