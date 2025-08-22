@@ -762,8 +762,6 @@ class WarehousemanService
     public function getInvoicemy($useId)
     {
    
-         
-
         $invoiceData = $this->warehousemanRepository->getInvoicemy($useId);
         if (!$invoiceData) {
             return $this->errorResponse('Invoice not found for this shipment', 404);
