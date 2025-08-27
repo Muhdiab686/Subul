@@ -14,7 +14,7 @@ Route::post('/stripe/webhook', [AuthController::class, 'handleStripeWebhook']);
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
-Route::get('/my/shipments', [AdminController::class, 'getshipments']);
+Route::get('/shipments', [AdminController::class, 'getshipments']);
 
 Route::middleware(['auth:api', AdminRole::class . ':customer,company'])->group(function () {
     Route::get('/get/invoicemy', [WarehousemanController::class, 'getInvoicemy']);
