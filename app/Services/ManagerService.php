@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\ManagerRepository;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode as QrCodeGenerator;
 
@@ -369,27 +370,33 @@ class ManagerService
         $qrData = json_encode([
             'shipment_id' => $shipmentId
         ]);
-
+    
         $filename = Str::uuid() . '.svg';
-        $qrPath = '/uploads/qr_codes/' . $filename;
-
-        if (!file_exists(public_path('/uploads/qr_codes'))) {
-            mkdir(public_path('/uploads/qr_codes'), 0777, true);
+    
+        // مسار الحفظ مباشرة في public_html
+        $qrPath = '/home/u322962745/domains/bservice-iq.com/public_html/qr_codes/' . $filename;
+    
+        if (!file_exists(dirname($qrPath))) {
+            mkdir(dirname($qrPath), 0755, true);
         }
-
+    
         QrCodeGenerator::size(300)
             ->errorCorrection('H')
-            ->generate($qrData, public_path($qrPath));
-
+            ->generate($qrData, $qrPath);
+    
+        // رابط يمكن الوصول له عبر API
+        $qrUrl = 'https://bservice-iq.com/qr_codes/' . $filename;
+    
         $qrCodeData = [
             'shipment_id' => $shipmentId,
             'invoice_id' => $invoiceId,
-            'qr_code_path' => $qrPath,
+            'qr_code_path' => $qrUrl,  // نحفظ الرابط المباشر في DB
             'qr_code_data' => $qrData
         ];
-
+    
         return $this->managerRepository->createQRCode($qrCodeData);
     }
+
 
     private function generateInvoiceNumber()
     {
@@ -473,7 +480,7 @@ class ManagerService
                 'customer_code' => optional($invoice->customer)->customer_code,
                 'declared_parcels_count' => optional($invoice->shipment)->declared_parcels_count,
                 'supplier_name' => optional($invoice->shipment)->supplier_name,
-                'qr_code' => $qrCodePath,
+                'qr_code' => $qrCodePath ? asset($qrCodePath) : null,
             ],
             'tax_amount' => $invoice->tax_amount,
             'total_amount' => $invoice->total_amount,

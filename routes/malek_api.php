@@ -17,6 +17,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/create/shipments', [WarehousemanController::class, 'createShipment']);
     Route::get('/get/enabled-countries', [WarehousemanController::class, 'getEnabledCountries']);
     Route::get('/get/one/shipment/{shipment_id}', [ManagerController::class, 'getShipmentById']);
+    Route::get('/get/invoice/{invoice_id}', [ManagerController::class, 'getInvoiceDetails']);
 
 
     Route::get('/get/customers', [WarehousemanController::class, 'getCustomers']);
@@ -41,7 +42,6 @@ Route::middleware(['auth:api', AdminRole::class . ':manager'])->group(function (
     Route::post('/reject/shipments', [ManagerController::class, 'rejectShipment']);
 
     Route::post('/create/invoice', [ManagerController::class, 'createInvoice']);
-    Route::get('/get/invoice/{invoice_id}', [ManagerController::class, 'getInvoiceDetails']);
 });
 Route::middleware(['auth:api', AdminRole::class . ':warehouseman'])->group(function () {
 
