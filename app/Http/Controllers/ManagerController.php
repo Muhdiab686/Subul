@@ -135,22 +135,22 @@ public function get_unapproved_Shipments(Request $request)
         return $this->managerService->getShipmentById($shipment_id);
     }
 
-public function createInvoice(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'customer_id'   => 'required|exists:users,id',
-        'shipment_id'   => 'required|exists:shipments,id',
-        'amount'        => 'nullable|numeric|min:0',
-        'includes_tax'  => 'required|boolean',
-        'payable_at'    => 'required|date',
-    ]);
+    public function createInvoice(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_id'   => 'required|exists:users,id',
+            'shipment_id'   => 'required|exists:shipments,id',
+            'amount'        => 'nullable|numeric|min:0',
+            'includes_tax'  => 'required|boolean',
+            'payable_at'    => 'required|date',
+        ]);
 
-    if ($validator->fails()) {
-        return $this->errorResponse('Validation error', 422, $validator->errors());
+        if ($validator->fails()) {
+            return $this->errorResponse('Validation error', 422, $validator->errors());
+        }
+
+        return $this->managerService->createInvoice($validator->validated());
     }
-
-    return $this->managerService->createInvoice($validator->validated());
-}
 
 
 
