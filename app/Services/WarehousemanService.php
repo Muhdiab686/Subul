@@ -6,6 +6,7 @@ use App\Traits\ApiResponseTrait;
 use App\Models\Shipment;
 use App\Models\Supplier;
 use App\Models\Invoice;
+use App\Repositories\ManagerRepository;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
@@ -14,10 +15,16 @@ class WarehousemanService
     use ApiResponseTrait;
 
     protected $warehousemanRepository;
+    protected $managerRepository;
+    protected $managerService;
 
-    public function __construct(WarehousemanRepository $warehousemanRepository)
+    public function __construct(WarehousemanRepository $warehousemanRepository ,ManagerRepository $managerRepository ,ManagerService $managerService)
     {
         $this->warehousemanRepository = $warehousemanRepository;
+        $this->managerRepository = $managerRepository;
+        $this->managerService = $managerService;
+
+
     }
 
     public function getCustomers($customerCode = null)
@@ -69,19 +76,22 @@ class WarehousemanService
         return $trackingNumber;
     }
 
-    public function createShipment(array $data)
-    {
-        // Check if supplier exists
-        $supplier = Supplier::find($data['supplier_id']);
+  public function createShipment(array $data)
+{
+    $supplierIds = $data['supplier_ids'] ?? [$data['supplier_id']]; // دعم حالة واحدة أو أكثر
+    $shipments = [];
+
+    foreach ($supplierIds as $supplierId) {
+        // التحقق من المورد
+        $supplier = Supplier::find($supplierId);
         if (!$supplier) {
-            return $this->errorResponse('Supplier not found', 404);
+            return $this->errorResponse("Supplier with ID {$supplierId} not found", 404);
         }
 
-        $isWarehouseman = auth()->user()->role === 'warehouseman';
         $shipmentData = [
             'type' => $data['type'],
             'customer_id' => $data['customer_id'],
-            'supplier_id' => $data['supplier_id'],
+            'supplier_id' => $supplierId,
             'origin_country_id' => $data['origin_country_id'],
             'destination_country_id' => $data['destination_country_id'],
             'declared_parcels_count' => $data['declared_parcels_count'],
@@ -89,13 +99,31 @@ class WarehousemanService
             'status' => null,
             'created_by_user_id' => auth()->id(),
             'tracking_number' => $this->generateTrackingNumber(),
-            'is_approved' => $isWarehouseman,
+            'is_approved' => auth()->user()->role === 'warehouseman',
         ];
 
-        $data = $this->warehousemanRepository->createShipment($shipmentData);
+        $shipment = $this->warehousemanRepository->createShipment($shipmentData);
+        $shipments[] = $shipment;
 
-        return $this->successResponse($data, 'Shipment created successfully.', 200);
+        // إذا نوع الشحنة ship_only، إنشاء فاتورة مباشرة
+        if ($shipment->type === 'ship_only') {
+            $invoiceData = [
+                'customer_id' => $shipment->customer_id,
+                'shipment_id' => $shipment->id,
+                'amount' => $shipment->declared_parcels_count * 10, // مثال للحساب، يمكن تعديل
+                'includes_tax' => true,
+                'payable_at' => now()->addDays(7)->format('Y-m-d'), // دفع خلال 7 أيام
+            ];
+
+            $this->managerService->createInvoice($invoiceData);
+
+            // تحديث حالة الشحنة مباشرة بعد إنشاء الفاتورة
+            $this->managerRepository->updateShipmentStatus($shipment->id, 'in_process');
+        }
     }
+
+    return $this->successResponse($shipments, 'Shipments created successfully.', 200);
+}
 
     public function updateShipmentOriginCountry(array $data)
     {

@@ -40,10 +40,11 @@ class WarehousemanController extends Controller
 
     public function createShipment(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+       $validator = Validator::make($request->all(), [
             'type' => 'required|string|in:ship_pay,ship_only,pay_only',
             'customer_id' => 'required|exists:users,id',
-            'supplier_id' => 'required|exists:suppliers,id',
+            'supplier_ids' => 'required|array|min:1', // تعديل هنا لقبول مصفوفة
+            'supplier_ids.*' => 'exists:suppliers,id', // كل عنصر بالمصفوفة لازم يكون موجود في جدول الموردين
             'origin_country_id' => 'required|exists:countries,id',
             'destination_country_id' => 'required|exists:countries,id',
             'declared_parcels_count' => 'required|integer|min:1',

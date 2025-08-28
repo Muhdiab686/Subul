@@ -179,7 +179,8 @@ class ManagerService
 
     public function get_approved_Shipments($search = null)
     {
-        $query = $this->managerRepository->get_approved_Shipments();
+        $query = $this->managerRepository->get_approved_Shipments()
+            ->where('type', '!=', 'ship_only'); // استبعاد الشحنات من نوع ship_only
 
         if (!empty($search)) {
             $query->whereHas('customer', function ($q) use ($search) {
@@ -213,6 +214,7 @@ class ManagerService
 
         return $this->successResponse($data, 'Approved shipments retrieved successfully', 200);
     }
+
 
 
 
@@ -370,30 +372,30 @@ class ManagerService
         $qrData = json_encode([
             'shipment_id' => $shipmentId
         ]);
-    
+
         $filename = Str::uuid() . '.svg';
-    
+
         // مسار الحفظ مباشرة في public_html
         $qrPath = '/home/u322962745/domains/bservice-iq.com/public_html/qr_codes/' . $filename;
-    
+
         if (!file_exists(dirname($qrPath))) {
             mkdir(dirname($qrPath), 0755, true);
         }
-    
+
         QrCodeGenerator::size(300)
             ->errorCorrection('H')
             ->generate($qrData, $qrPath);
-    
+
         // رابط يمكن الوصول له عبر API
         $qrUrl = 'https://bservice-iq.com/qr_codes/' . $filename;
-    
+
         $qrCodeData = [
             'shipment_id' => $shipmentId,
             'invoice_id' => $invoiceId,
             'qr_code_path' => $qrUrl,  // نحفظ الرابط المباشر في DB
             'qr_code_data' => $qrData
         ];
-    
+
         return $this->managerRepository->createQRCode($qrCodeData);
     }
 
@@ -420,7 +422,6 @@ class ManagerService
         $taxAmount = null;
 
         if ($data['includes_tax']) {
-            // الحصول على قيمة الضريبة من جدول fixed_costs
             $taxCost = $this->managerRepository->getTaxAmount();
 
             if (!$taxCost) {
