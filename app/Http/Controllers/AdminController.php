@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Flight;
 use App\Services\AdminService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -13,7 +14,31 @@ class AdminController extends Controller
     use ApiResponseTrait;
 
     protected $adminService;
+    public function indexflights()
+        {
+            $flights = Flight::with('departureAirport','arrivalAirport')->get();
+            return $this->successResponse($flights , 'flights',200);
+        }
 
+    // إضافة رحلة جديدة
+    public function storeflight(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'flight_number' => 'required|string|unique:flights,flight_number',
+            'departure_airport_id' => 'required|exists:airports,id',
+            'arrival_airport_id' => 'required|exists:airports,id',
+            'departure_time' => 'required|date',
+            'arrival_time' => 'required|date|after:departure_time',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors'=>$validator->errors()], 422);
+        }
+
+        $flight = Flight::create($request->all());
+
+        return response()->json($flight, 201);
+    }
     public function __construct(AdminService $adminService)
     {
         $this->adminService = $adminService;

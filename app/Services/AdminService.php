@@ -173,31 +173,31 @@ class AdminService
     }
 
    public function getMyShipments()
-{
-    $shipments = Shipment::with('parcels:id,shipment_id,status')
-        ->where('customer_id', auth()->id())
-        ->get();
+    {
+        $shipments = Shipment::with('parcels:id,shipment_id,status')
+            ->where('customer_id', auth()->id())
+            ->get();
 
-    $data = $shipments->map(function ($shipment) {
-        return [
-            'id' => $shipment->id,
-            'tracking_number' => $shipment->tracking_number,
-            'type' => $shipment->type,
-            'status' => $shipment->status,
-            'declared_parcels_count' => $shipment->declared_parcels_count,
-            'created_at' => $shipment->created_at,
-            'parcels' => $shipment->parcels->map(function ($parcel) {
-                return [
-                    'id' => $parcel->id,
-                    'weight' => $parcel->weight,
-                    'status' => $parcel->status,
-                ];
-            }),
-        ];
-    });
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'tracking_number' => $shipment->tracking_number,
+                'type' => $shipment->type,
+                'status' => $shipment->status,
+                'declared_parcels_count' => $shipment->declared_parcels_count,
+                'created_at' => $shipment->created_at,
+                'parcels' => $shipment->parcels->map(function ($parcel) {
+                    return [
+                        'id' => $parcel->id,
+                        'weight' => $parcel->weight,
+                        'status' => $parcel->status,
+                    ];
+                }),
+            ];
+        });
 
-    return $this->successResponse($data, 'My shipments with parcels retrieved successfully.', 200);
-}
+        return $this->successResponse($data, 'My shipments with parcels retrieved successfully.', 200);
+    }
 
     public function getComplaintWithResponses($id)
     {

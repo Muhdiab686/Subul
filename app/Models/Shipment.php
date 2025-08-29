@@ -14,6 +14,7 @@ class Shipment extends Model
         'tracking_number',
         'type',
         'customer_id',
+        'flight_id' ,// ← مهم جدًا
         'supplier_id',
         'origin_country_id',
         'destination_country_id',
@@ -76,6 +77,10 @@ class Shipment extends Model
     }
 
 
+    public function flight()
+    {
+        return $this->belongsTo(Flight::class, 'flight_id');
+    }
 
     public function invoice()
     {

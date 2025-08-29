@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Repositories\ManagerRepository;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Carbon;
 
 class WarehousemanService
 {
@@ -75,51 +76,81 @@ class WarehousemanService
         return $trackingNumber;
     }
 
-   public function createShipment(array $data)
-{
-    $supplierIds = $data['supplier_ids'] ?? [$data['supplier_id']];
-    $shipments = [];
+     public function createShipment(array $data)
+    {
+        $supplierIds = $data['supplier_ids'] ?? [$data['supplier_id']];
+        $shipments = [];
+    
+        foreach ($supplierIds as $supplierId) {
+            $supplier = Supplier::find($supplierId);
+            if (!$supplier) {
+                return $this->errorResponse("Supplier with ID {$supplierId} not found", 404);
+            }
+    
+            $isWarehouseman = auth()->user()->role === 'warehouseman';
+    
+            // ✅ لو المستخدم مش warehouseman نخلي customer_id = auth()->id()
+            $customerId = $isWarehouseman 
+                ? $data['customer_id'] 
+                : auth()->id();
+    
+            $invoiceFilePath = null;
+            $invoiceFilePath = null;
+            if (request()->hasFile('invoice_file')) {
+                $extension = request()->file('invoice_file')->getClientOriginalExtension();
+                $filename = Str::uuid() . '.' . $extension;
+                
+                // المسار الكامل للحفظ داخل public_html
+                $filePath = '/home/u322962745/domains/bservice-iq.com/public_html/invoice_files/' . $filename;
+                
+                if (!file_exists(dirname($filePath))) {
+                    mkdir(dirname($filePath), 0755, true);
+                }
+                
+                // نقل الملف فعليًا إلى المجلد
+                request()->file('invoice_file')->move(dirname($filePath), $filename);
+                
+                // الرابط المباشر مثل QR code
+                $invoiceFilePath = 'https://bservice-iq.com/invoice_files/' . $filename;
+                }
 
-    foreach ($supplierIds as $supplierId) {
-        $supplier = Supplier::find($supplierId);
-        if (!$supplier) {
-            return $this->errorResponse("Supplier with ID {$supplierId} not found", 404);
-        }
-
-        $isWarehouseman = auth()->user()->role === 'warehouseman';
-
-        $shipmentData = [
-            'type' => $data['type'],
-            'customer_id' => $data['customer_id'],
-            'supplier_id' => $supplierId,
-            'origin_country_id' => $data['origin_country_id'],
-            'destination_country_id' => $data['destination_country_id'],
-            'declared_parcels_count' => $data['declared_parcels_count'],
-            'notes' => $data['notes'] ?? null,
-            'status' => 'in_process', // ✅ دايمًا in_process
-            'created_by_user_id' => auth()->id(),
-            'tracking_number' => $this->generateTrackingNumber(),
-            'is_approved' => $isWarehouseman, // ✅ فقط المستودع يوافق مباشرة
-        ];
-
-        $shipment = $this->warehousemanRepository->createShipment($shipmentData);
-        $shipments[] = $shipment;
-
-        // ✅ إذا warehouseman + ship_only → إنشاء الفاتورة مباشرة
-        if ($isWarehouseman && $shipment->type === 'ship_only') {
-            $invoiceData = [
-                'customer_id' => $shipment->customer_id,
-                'shipment_id' => $shipment->id,
-                'amount' => $shipment->declared_parcels_count * 10, // مثال للسعر
-                'includes_tax' => true,
-                'payable_at' => now()->addDays(7)->format('Y-m-d'),
+    
+            $shipmentData = [
+                'type' => $data['type'],
+                'customer_id' => $customerId, // ✅ هنا التعديل
+                'supplier_id' => $supplierId,
+                'origin_country_id' => $data['origin_country_id'],
+                'destination_country_id' => $data['destination_country_id'],
+                'declared_parcels_count' => $data['declared_parcels_count'],
+                'notes' => $data['notes'] ?? null,
+                'invoice_file' => $invoiceFilePath,
+                'status' => 'in_process',
+                'created_by_user_id' => auth()->id(),
+                'tracking_number' => $this->generateTrackingNumber(),
+                'is_approved' => $isWarehouseman,
             ];
-            $this->managerService->createInvoice($invoiceData);
+    
+            $shipment = $this->warehousemanRepository->createShipment($shipmentData);
+            $shipments[] = $shipment;
+    
+            // ✅ لو warehouseman + ship_only → إنشاء الفاتورة مباشرة
+            if ($isWarehouseman && $shipment->type === 'ship_only') {
+                $invoiceData = [
+                    'customer_id' => $shipment->customer_id,
+                    'shipment_id' => $shipment->id,
+                    'amount' => $shipment->declared_parcels_count * 0, // مثال للسعر
+                    'includes_tax' => false,
+                    'payable_at' => now()->addDays(7)->format('Y-m-d'),
+                ];
+                $this->managerService->createInvoice($invoiceData);
+            }
         }
+    
+        return $this->successResponse($shipments, 'Shipments created successfully.', 200); 
     }
 
-    return $this->successResponse($shipments, 'Shipments created successfully.', 200);
-}
+
+
 
     public function updateShipmentOriginCountry(array $data)
     {
@@ -546,32 +577,63 @@ class WarehousemanService
         return $this->successResponse($data, 'Drivers retrieved successfully.', 200);
     }
 
+    public function trackShipment($shipment_id)
+    {
+        $shipment = Shipment::with('flight.departureAirport', 'flight.arrivalAirport')->findOrFail($shipment_id);
+
+        if (!$shipment->flight) {
+            return response()->json(['status' => $shipment->status]);
+        }
+
+        $now = now();
+        $departure = Carbon\Carbon::parse($shipment->flight->departure_time);
+        $arrival = Carbon\Carbon::parse($shipment->flight->arrival_time);
+
+
+
+        if ($now < $departure) {
+            $status = 'in_process';
+        } elseif ($now >= $departure && $now < $arrival) {
+            $status = 'in_the_way';
+            $progress = min(max(($now->timestamp - $departure->timestamp) / ($arrival->timestamp - $departure->timestamp), 0), 1);
+            $lat = $shipment->flight->departureAirport->latitude + ($shipment->flight->arrivalAirport->latitude - $shipment->flight->departureAirport->latitude) * $progress;
+            $lng = $shipment->flight->departureAirport->longitude + ($shipment->flight->arrivalAirport->longitude - $shipment->flight->departureAirport->longitude) * $progress;
+        } else {
+            $status = 'delivered';
+            $lat = $shipment->flight->arrivalAirport->latitude;
+            $lng = $shipment->flight->arrivalAirport->longitude;
+        }
+        $data = [
+            'shipment_id' => $shipment->id,
+            'status' => $status,
+            'current_location' => $status == 'in_the_way' || $status == 'delivered' ? ['lat' => $lat, 'lng' => $lng] : null
+        ];
+        return $this->successResponse($data, 'track Shipment', 200);
+    }
+
     public function updateShipmentForDelivery($shipment_id, array $data)
     {
-
         $shipmentPhotoPath = null;
         if (isset($data['shipment_photo'])) {
             $filename = Str::uuid() . '.' . $data['shipment_photo']->getClientOriginalExtension();
             $data['shipment_photo']->move(public_path('/uploads/shipment_photos'), $filename);
             $shipmentPhotoPath = '/uploads/shipment_photos/' . $filename;
         }
-
-
+        // تحديث بيانات الشحنة + ربط الرحلة
         $updateData = [
             'actual_parcels_count' => $data['actual_parcels_count'],
             'delivery_staff_id' => $data['delivery_staff_id'],
-            'status' => 'in_the_way'
+            'flight_id' => $data['flight_id'], // ربط الرحلة
+            'status' => 'in_process' // تبقى في المستودع حتى وقت الإقلاع
         ];
 
         if ($shipmentPhotoPath) {
             $updateData['shipment_photo'] = $shipmentPhotoPath;
         }
 
-        // Update shipment
         $shipment = $this->warehousemanRepository->updateShipment($shipment_id, $updateData);
 
         $deliveryDestinationCost = $this->warehousemanRepository->getDeliveryDestinationCost();
-
         if (!$deliveryDestinationCost) {
             return $this->errorResponse('Delivery destination cost not found in fixed costs.', 422);
         }
@@ -580,6 +642,7 @@ class WarehousemanService
 
         return $this->successResponse($shipment, 'Shipment updated for delivery successfully.', 200);
     }
+
 
     public function getShipmentDetails($shipment_id)
     {

@@ -256,6 +256,7 @@ class WarehousemanController extends Controller
                 'shipment_id' => 'required|exists:shipments,id',
                 'actual_parcels_count' => 'required|integer|min:1',
                 'delivery_staff_id' => 'required|exists:delivery_staff,id',
+                'flight_id' => 'required|exists:flights,id',
                 'shipment_photo' => 'nullable|image|max:2048'
             ]
         );
@@ -264,7 +265,9 @@ class WarehousemanController extends Controller
         }
         return $this->warehousemanService->updateShipmentForDelivery($shipment_id, $validator->validated());
     }
-
+    public function trackShipment($shipment_id){
+        return $this->warehousemanService->trackShipment($shipment_id);
+    }
     public function getShipmentDetails($shipment_id)
     {
         $validator = Validator::make(

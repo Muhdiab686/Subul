@@ -45,8 +45,7 @@ class ManagerRepository
 
     public function get_unapproved_Shipments()
     {
-        return Shipment::where('is_approved', false)
-                       ->whereNull('status');
+        return Shipment::where('is_approved', false)->where('status', 'in_process');
     }
 
 

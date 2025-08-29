@@ -11,11 +11,13 @@ use App\Http\Controllers\WarehousemanController;
 use App\Http\Middleware\AdminRole;
 
 Route::post('/stripe/webhook', [AuthController::class, 'handleStripeWebhook']);
+Route::get('shipments/{id}/tracking', [WarehousemanController::class, 'trackShipment']);
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::get('/shipments', [AdminController::class, 'getshipments']);
-
+Route::post('/flights', [AdminController::class, 'storeflight']); // لإضافة رحلة
+Route::get('/flights', [AdminController::class, 'indexflights']);
 Route::middleware(['auth:api', AdminRole::class . ':customer,company'])->group(function () {
     Route::get('/get/invoicemy', [WarehousemanController::class, 'getInvoicemy']);
     Route::post('/create/Complaint', [AdminController::class, 'createComplaint']);
