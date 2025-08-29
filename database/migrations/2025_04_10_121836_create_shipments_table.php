@@ -36,6 +36,8 @@ return new class extends Migration
             $table->string('scale_photo')->nullable();
             $table->string('airport_receipt_photo')->nullable();
             $table->string('delivery_photo')->nullable();
+            $table->string('invoice_file')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
         });

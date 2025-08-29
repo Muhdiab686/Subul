@@ -266,6 +266,18 @@ class ManagerService
             return $this->errorResponse('Shipment not found', 200);
         }
 
+        // ✅ إذا نوع الشحنة ship_only → إنشاء فاتورة مباشرة بمبلغ 0
+        if ($shipment->type === 'ship_only') {
+            $invoiceData = [
+                'customer_id' => $shipment->customer_id,
+                'shipment_id' => $shipment->id,
+                'amount' => 0,                // ✅ قيمة صفر
+                'includes_tax' => false,
+                'payable_at' => now()->format('Y-m-d'),
+            ];
+            $this->managerRepository->createInvoice($invoiceData);
+        }
+
         return $this->successResponse(null, 'Shipment approved successfully', 200);
     }
 

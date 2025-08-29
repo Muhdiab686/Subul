@@ -51,15 +51,15 @@ class ManagerRepository
 
 
     public function approveShipment($shipmentId)
-{
-    $shipment = Shipment::find($shipmentId);
-    if (!$shipment) {
-        return false;
+    {
+        $shipment = Shipment::find($shipmentId);
+        if (!$shipment) {
+            return false;
+        }
+        $shipment->is_approved = 1;
+        $shipment->save();
+        return $shipment;
     }
-    $shipment->is_approved = 1;
-    $shipment->save();
-    return $shipment;
-}
 
 
     public function getCustomerShipments($customerCode)

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Repositories\WarehousemanRepository;
@@ -18,13 +19,11 @@ class WarehousemanService
     protected $managerRepository;
     protected $managerService;
 
-    public function __construct(WarehousemanRepository $warehousemanRepository ,ManagerRepository $managerRepository ,ManagerService $managerService)
+    public function __construct(WarehousemanRepository $warehousemanRepository, ManagerRepository $managerRepository, ManagerService $managerService)
     {
         $this->warehousemanRepository = $warehousemanRepository;
         $this->managerRepository = $managerRepository;
         $this->managerService = $managerService;
-
-
     }
 
     public function getCustomers($customerCode = null)
@@ -76,17 +75,18 @@ class WarehousemanService
         return $trackingNumber;
     }
 
-  public function createShipment(array $data)
+   public function createShipment(array $data)
 {
-    $supplierIds = $data['supplier_ids'] ?? [$data['supplier_id']]; // دعم حالة واحدة أو أكثر
+    $supplierIds = $data['supplier_ids'] ?? [$data['supplier_id']];
     $shipments = [];
 
     foreach ($supplierIds as $supplierId) {
-        // التحقق من المورد
         $supplier = Supplier::find($supplierId);
         if (!$supplier) {
             return $this->errorResponse("Supplier with ID {$supplierId} not found", 404);
         }
+
+        $isWarehouseman = auth()->user()->role === 'warehouseman';
 
         $shipmentData = [
             'type' => $data['type'],
@@ -96,29 +96,25 @@ class WarehousemanService
             'destination_country_id' => $data['destination_country_id'],
             'declared_parcels_count' => $data['declared_parcels_count'],
             'notes' => $data['notes'] ?? null,
-            'status' => null,
+            'status' => 'in_process', // ✅ دايمًا in_process
             'created_by_user_id' => auth()->id(),
             'tracking_number' => $this->generateTrackingNumber(),
-            'is_approved' => auth()->user()->role === 'warehouseman',
+            'is_approved' => $isWarehouseman, // ✅ فقط المستودع يوافق مباشرة
         ];
 
         $shipment = $this->warehousemanRepository->createShipment($shipmentData);
         $shipments[] = $shipment;
 
-        // إذا نوع الشحنة ship_only، إنشاء فاتورة مباشرة
-        if ($shipment->type === 'ship_only') {
+        // ✅ إذا warehouseman + ship_only → إنشاء الفاتورة مباشرة
+        if ($isWarehouseman && $shipment->type === 'ship_only') {
             $invoiceData = [
                 'customer_id' => $shipment->customer_id,
                 'shipment_id' => $shipment->id,
-                'amount' => $shipment->declared_parcels_count * 10, // مثال للحساب، يمكن تعديل
+                'amount' => $shipment->declared_parcels_count * 10, // مثال للسعر
                 'includes_tax' => true,
-                'payable_at' => now()->addDays(7)->format('Y-m-d'), // دفع خلال 7 أيام
+                'payable_at' => now()->addDays(7)->format('Y-m-d'),
             ];
-
             $this->managerService->createInvoice($invoiceData);
-
-            // تحديث حالة الشحنة مباشرة بعد إنشاء الفاتورة
-            $this->managerRepository->updateShipmentStatus($shipment->id, 'in_process');
         }
     }
 
@@ -248,7 +244,7 @@ class WarehousemanService
             $dimensionalWeight
         );
 
-                // Handle scale photo path - copy from local path and store in project
+        // Handle scale photo path - copy from local path and store in project
         $ScalePhotoPath = null;
         if (isset($data['scale_photo_path']) && !empty($data['scale_photo_path'])) {
             try {
@@ -344,7 +340,7 @@ class WarehousemanService
                     $dimensionalWeight
                 );
 
-                                // Handle scale photo upload - store uploaded file
+                // Handle scale photo upload - store uploaded file
                 $scalePhotoPath = null;
                 if (isset($parcelData['scale_photo_upload']) && $parcelData['scale_photo_upload'] instanceof \Illuminate\Http\UploadedFile) {
                     $filename = Str::uuid() . '.' . $parcelData['scale_photo_upload']->getClientOriginalExtension();
@@ -415,7 +411,6 @@ class WarehousemanService
                     'dimensional_weight' => round($dimensionalWeight, 2),
                     'final_weight' => round($finalWeight, 2)
                 ];
-
             } catch (\Exception $e) {
                 $errors[] = [
                     'index' => $index,
@@ -789,7 +784,7 @@ class WarehousemanService
     }
     public function getInvoicemy($useId)
     {
-   
+
         $invoiceData = $this->warehousemanRepository->getInvoicemy($useId);
         if (!$invoiceData) {
             return $this->errorResponse('Invoice not found for this shipment', 404);
@@ -797,5 +792,4 @@ class WarehousemanService
 
         return $this->successResponse($invoiceData, 'Invoice details retrieved successfully.', 200);
     }
-
 }
