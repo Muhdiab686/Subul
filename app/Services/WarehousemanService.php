@@ -602,6 +602,9 @@ class WarehousemanService
             $status = 'delivered';
             $lat = $shipment->flight->arrivalAirport->latitude;
             $lng = $shipment->flight->arrivalAirport->longitude;
+            // $satt = 'in_the_way';
+            // $shipment->status = $satt;
+            // $shipment->save();
         }
         $data = [
             'shipment_id' => $shipment->id,
@@ -673,7 +676,6 @@ class WarehousemanService
         $updateData = [
             'warehouse_received_at' => now(),
             'warehouse_receiver_id' => auth()->id(),
-            'delivered_to_WH_dis' => true
         ];
 
         if ($airportReceiptPhotoPath) {
