@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\NotificationService;
 use App\Services\WarehousemanService;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
@@ -12,10 +13,13 @@ class WarehousemanController extends Controller
     use ApiResponseTrait;
 
     protected $warehousemanService;
+    protected $f;
 
-    public function __construct(WarehousemanService $warehousemanService)
+    public function __construct(WarehousemanService $warehousemanService , NotificationService $f)
     {
         $this->warehousemanService = $warehousemanService;
+        $this->f = $f;
+
     }
 
     public function getCustomers(Request $request)
@@ -53,6 +57,7 @@ class WarehousemanController extends Controller
         if ($validator->fails()) {
             return $this->errorResponse('Validation error', 422, $validator->errors());
         }
+        $this->f->sendToUser('شحنتك انقبلت يولد','شحنتك انقبلت يولد',Auth()->user());
         return $this->warehousemanService->createShipment($validator->validated());
     }
 
